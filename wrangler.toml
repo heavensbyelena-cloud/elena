@@ -2,5 +2,3 @@ name = "heaven"
 pages_build_output_dir = ".open-next"
 compatibility_date = "2026-03-13"
 compatibility_flags = ["nodejs_compat"]
-directory = ".open-next/assets"
-binding = "ASSETS"
