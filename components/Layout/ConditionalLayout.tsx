@@ -9,13 +9,14 @@ import Toast from '@/components/Common/Toast';
 interface ConditionalLayoutProps {
   children: React.ReactNode;
   isAdmin: boolean;
+  resineSubcats: string[];
 }
 
 /**
  * Sur / (Coming Soon) : affiche uniquement le contenu, sans Header/Footer.
  * Sur le reste du site : Header + main + Footer + CartSidebar + Toast.
  */
-export default function ConditionalLayout({ children, isAdmin }: ConditionalLayoutProps) {
+export default function ConditionalLayout({ children, isAdmin, resineSubcats }: ConditionalLayoutProps) {
   const pathname = usePathname();
 
   if (pathname === '/') {
@@ -24,7 +25,7 @@ export default function ConditionalLayout({ children, isAdmin }: ConditionalLayo
 
   return (
     <>
-      <Header isAdmin={isAdmin} />
+      <Header isAdmin={isAdmin} resineSubcats={resineSubcats} />
       <main>{children}</main>
       <Footer />
       <CartSidebar />

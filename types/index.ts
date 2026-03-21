@@ -9,7 +9,14 @@ export type ProductCategory =
   | 'parrure'
   | 'bougies'
   | 'lunettes'
-  | 'sacs';
+  | 'sacs'
+  | 'resine'
+  | 'resine-plateaux'
+  | 'resine-bijoux'
+  | 'resine-deco'
+  | 'resine-boites'
+  | 'resine-portecles'
+  | 'resine-perso';
 
 export interface Product {
   id: string;
@@ -17,8 +24,8 @@ export interface Product {
   description?: string;
   price: number;
   /**
-   * Catégorie technique (slug) stockée en base :
-   * colliers | boucles | parrure | bougies | lunettes | sacs
+   * Catégorie technique (slug) stockée en base.
+   * Les créations résine utilisent un slug préfixé : resine-plateaux, resine-bijoux, etc.
    */
   category: ProductCategory;
   badge?: string;
@@ -37,6 +44,13 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
   'bougies',
   'lunettes',
   'sacs',
+  'resine',
+  'resine-plateaux',
+  'resine-bijoux',
+  'resine-deco',
+  'resine-boites',
+  'resine-portecles',
+  'resine-perso',
 ];
 
 // ---------- PANIER ----------

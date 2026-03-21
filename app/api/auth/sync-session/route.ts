@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const then = safeRedirectPath(request.nextUrl.searchParams.get('then'));
 
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {

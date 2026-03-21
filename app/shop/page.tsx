@@ -5,65 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
 import ProductGrid from '@/components/Product/ProductGrid';
+import { CATEGORIES, getCategoryBySlug, isResineSlug, getResineSubcatLabel } from '@/lib/categories';
 import type { Product, ProductCategory } from '@/types';
-
-const CATEGORY_DEFINITIONS: { slug: ProductCategory; label: string }[] = [
-  { slug: 'boucles',   label: "Boucles d'oreille" },
-  { slug: 'colliers',  label: 'Colliers' },
-  { slug: 'parrure',   label: 'Parrure' },
-  { slug: 'bougies',   label: 'Bougies' },
-  { slug: 'lunettes',  label: 'Lunettes' },
-  { slug: 'sacs',      label: 'Sacs à mains' },
-];
-
-const CATEGORY_SEO: Record<
-  ProductCategory,
-  { title: string; description: string; ogImage: string }
-> = {
-  colliers: {
-    title: "Colliers — Heaven's By Elena",
-    description:
-      'Découvrez nos colliers faits main en gold filled et argent sterling, créés avec soin par Elena.',
-    ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Colliers',
-  },
-  boucles: {
-    title: "Boucles d’oreille — Heaven's By Elena",
-    description:
-      'Boucles d’oreille délicates et lumineuses, façonnées à la main pour sublimer chaque tenue.',
-    ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Boucles',
-  },
-  parrure: {
-    title: "Parrure — Heaven's By Elena",
-    description:
-      'Parrures complètes et harmonieuses pour des looks élégants et sophistiqués.',
-    ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Parrure',
-  },
-  bougies: {
-    title: "Bougies — Heaven's By Elena",
-    description:
-      'Bougies parfumées et décoratives, pensées comme des objets de décoration raffinés.',
-    ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Bougies',
-  },
-  lunettes: {
-    title: "Lunettes — Heaven's By Elena",
-    description:
-      'Sélection de lunettes tendance pour compléter votre style avec élégance.',
-    ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Lunettes',
-  },
-  sacs: {
-    title: "Sacs à mains — Heaven's By Elena",
-    description:
-      'Sacs à mains élégants et intemporels, pensés pour accompagner vos journées et vos soirées.',
-    ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Sacs',
-  },
-};
 
 const DEFAULT_SEO = {
   title: "Boutique — Heaven's By Elena",
   description:
-    "Découvrez l’ensemble des créations Heaven's By Elena : colliers, boucles d’oreille, parrures, bougies, lunettes et sacs à mains.",
-  ogImage:
-    'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Heaven%27s+By+Elena',
+    "Découvrez toutes les créations Heaven's By Elena : colliers, boucles d'oreille, parrures, bougies, lunettes, sacs et créations en résine.",
+  ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Heaven%27s+By+Elena',
 };
 
 function AdminRefreshButton() {
@@ -88,7 +37,7 @@ function AdminRefreshButton() {
   }
   return (
     <>
-      <button type="button" onClick={refresh} disabled={loading} style={{ background: 'var(--noir)', color: 'var(--blanc)', border: 'none', padding: '8px 14px', fontSize: '0.8rem', cursor: loading ? 'wait' : 'pointer', textDecoration: 'underline' }}>
+      <button type="button" onClick={refresh} disabled={loading} style={{ background: 'var(--accent)', color: 'var(--blanc)', border: 'none', padding: '8px 14px', fontSize: '0.8rem', cursor: loading ? 'wait' : 'pointer', textDecoration: 'underline' }}>
         {loading ? 'Actualisation…' : 'Actualiser ma session'}
       </button>
       {error && <span style={{ display: 'block', marginTop: '6px', fontSize: '0.8rem', color: 'var(--gris)' }}>{error}</span>}
@@ -102,7 +51,7 @@ function ShopPageContent() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [filtered, setFiltered] = useState<Product[]>([]);
-  const [loading,  setLoading]  = useState(true);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActive] = useState<ProductCategory | null>(null);
 
   const baseUrl =
@@ -110,9 +59,24 @@ function ShopPageContent() {
       ? process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
       : process.env.NEXT_PUBLIC_SITE_URL ?? '';
 
+  // Catégorie active = "resine" si l'un des slugs résine est sélectionné
+  const isResineActive = activeCategory ? isResineSlug(activeCategory) : false;
+
+  // Sous-catégories résine dérivées des produits chargés (100% dynamique)
+  const resineSubcats = useMemo(() => {
+    const slugs = [...new Set(
+      products.filter(p => p.category.startsWith('resine-')).map(p => p.category)
+    )].sort();
+    return slugs.map(slug => ({ slug, label: getResineSubcatLabel(slug) }));
+  }, [products]);
+
   const currentSeo = useMemo(() => {
     if (!activeCategory) return DEFAULT_SEO;
-    return CATEGORY_SEO[activeCategory] ?? DEFAULT_SEO;
+    const cat = getCategoryBySlug(activeCategory);
+    if (cat) return cat.seo;
+    // Sous-catégorie résine : utiliser le SEO résine parent
+    if (isResineSlug(activeCategory)) return getCategoryBySlug('resine')?.seo ?? DEFAULT_SEO;
+    return DEFAULT_SEO;
   }, [activeCategory]);
 
   const loadProducts = useCallback(async () => {
@@ -153,14 +117,30 @@ function ShopPageContent() {
 
   function filterBy(cat: ProductCategory | null) {
     setActive(cat);
-    setFiltered(cat ? products.filter(p => p.category === cat) : products);
+    if (!cat) {
+      setFiltered(products);
+    } else if (cat === 'resine') {
+      // "Tout voir Résine" = afficher tous les produits résine (parent + sous-catégories)
+      setFiltered(products.filter(p => isResineSlug(p.category)));
+    } else {
+      setFiltered(products.filter(p => p.category === cat));
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  const activeCategoryLabel = useMemo(() => {
+    if (!activeCategory) return null;
+    const cat = getCategoryBySlug(activeCategory);
+    if (cat) return cat.label;
+    // Sous-catégorie résine : cherche dans les slugs dérivés des produits
+    const sub = resineSubcats.find(s => s.slug === activeCategory);
+    return sub?.label ?? getResineSubcatLabel(activeCategory);
+  }, [activeCategory, resineSubcats]);
+
   return (
-    <div style={{ minHeight: '80vh' }}>
+    <div style={{ minHeight: '80vh', background: 'var(--fond)' }}>
       {adminRequired && (
-        <div style={{ background: 'var(--rose-poudre)', padding: '16px 24px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--noir)' }}>
+        <div style={{ background: 'transparent', padding: '20px 24px', textAlign: 'center', fontSize: '0.75rem', color: 'var(--texte-muted)', letterSpacing: '0.25em', borderBottom: '1px solid var(--bordure)' }}>
           <strong>Accès admin refusé.</strong> Votre session n&apos;a pas les droits admin à jour.
           <br />
           <span style={{ marginTop: '8px', display: 'inline-block' }}>
@@ -178,11 +158,7 @@ function ShopPageContent() {
         <meta property="og:type" content="website" />
         <meta
           property="og:url"
-          content={
-            activeCategory
-              ? `${baseUrl}/shop?category=${activeCategory}`
-              : `${baseUrl}/shop`
-          }
+          content={activeCategory ? `${baseUrl}/shop?category=${activeCategory}` : `${baseUrl}/shop`}
         />
         <meta property="og:image" content={currentSeo.ogImage} />
       </Head>
@@ -195,96 +171,92 @@ function ShopPageContent() {
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
             itemListElement: [
-              {
-                '@type': 'ListItem',
-                position: 1,
-                name: 'Accueil',
-                item: `${baseUrl}/`,
-              },
-              {
-                '@type': 'ListItem',
-                position: 2,
-                name: 'Boutique',
-                item: `${baseUrl}/shop`,
-              },
+              { '@type': 'ListItem', position: 1, name: 'Accueil', item: `${baseUrl}/` },
+              { '@type': 'ListItem', position: 2, name: 'Boutique', item: `${baseUrl}/shop` },
               ...(activeCategory
-                ? [
-                    {
-                      '@type': 'ListItem',
-                      position: 3,
-                      name:
-                        CATEGORY_DEFINITIONS.find(
-                          c => c.slug === activeCategory,
-                        )?.label ?? activeCategory,
-                      item: `${baseUrl}/shop?category=${activeCategory}`,
-                    },
-                  ]
+                ? [{ '@type': 'ListItem', position: 3, name: activeCategoryLabel ?? activeCategory, item: `${baseUrl}/shop?category=${activeCategory}` }]
                 : []),
             ],
           }),
         }}
       />
+
       {/* En-tête */}
       <div style={{ padding: '60px 40px 40px', textAlign: 'center', borderBottom: '1px solid var(--bordure)' }}>
         <h1 className="section-title">La Boutique</h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--gris)', marginTop: '16px' }}>
+        <p style={{ fontSize: '0.9rem', color: 'var(--texte-muted)', marginTop: '16px' }}>
           {filtered.length} création{filtered.length > 1 ? 's' : ''}
-          {activeCategory && ` · ${activeCategory}`}
+          {activeCategoryLabel && ` · ${activeCategoryLabel}`}
         </p>
       </div>
 
-      {/* Filtres catégories */}
-      <div style={{ padding: '30px 40px', borderBottom: '1px solid var(--bordure)', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', background: 'var(--fond-casse)' }}>
-        <button
-          onClick={() => filterBy(null)}
-          style={{
-            padding: '8px 20px',
-            border: !activeCategory ? '1px solid var(--rose-poudre)' : '1px solid var(--bordure)',
-            background: 'transparent',
-            color: !activeCategory ? 'var(--noir)' : 'var(--gris)',
-            fontSize: '0.7rem',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: !activeCategory ? '0 0 0 1px var(--rose-poudre)' : 'none',
-          }}
-        >
-          Tous les produits
-        </button>
-        {CATEGORY_DEFINITIONS.map(cat => (
-          <button
+      {/* Filtres — catégories principales */}
+      <div style={{ padding: '30px 40px 16px', borderBottom: isResineActive ? 'none' : '1px solid var(--bordure)', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', background: 'var(--fond-casse)' }}>
+        <FilterPill label="Tous les produits" active={!activeCategory} onClick={() => filterBy(null)} />
+        {CATEGORIES.map(cat => (
+          <FilterPill
             key={cat.slug}
-            onClick={() => filterBy(cat.slug)}
-            style={{
-              padding: '8px 20px',
-              border: activeCategory === cat.slug ? '1px solid var(--rose-poudre)' : '1px solid var(--bordure)',
-              background: 'transparent',
-              color: activeCategory === cat.slug ? 'var(--noir)' : 'var(--gris)',
-              fontSize: '0.7rem',
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: activeCategory === cat.slug ? '0 0 0 1px var(--rose-poudre)' : 'none',
-            }}
-          >
-            {cat.label}
-          </button>
+            label={cat.label}
+            active={activeCategory === cat.slug || (cat.slug === 'resine' && isResineActive)}
+            onClick={() => filterBy(cat.slug as ProductCategory)}
+          />
         ))}
       </div>
+
+      {/* Sous-filtres résine — uniquement si des produits résine existent */}
+      {isResineActive && resineSubcats.length > 0 && (
+        <div style={{ padding: '12px 40px 20px', borderBottom: '1px solid var(--bordure)', display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', background: 'var(--fond-casse)' }}>
+          <FilterPill
+            label="Tout voir"
+            active={activeCategory === 'resine'}
+            onClick={() => filterBy('resine')}
+            small
+          />
+          {resineSubcats.map(sub => (
+            <FilterPill
+              key={sub.slug}
+              label={sub.label}
+              active={activeCategory === sub.slug}
+              onClick={() => filterBy(sub.slug as ProductCategory)}
+              small
+            />
+          ))}
+        </div>
+      )}
 
       {/* Grille produits */}
       <div style={{ padding: '60px 40px' }}>
         <ProductGrid
           products={filtered}
           loading={loading}
-          emptyMessage={activeCategory
-            ? `Aucun produit dans la catégorie "${activeCategory}" pour le moment.`
+          emptyMessage={activeCategoryLabel
+            ? `Aucun produit dans "${activeCategoryLabel}" pour le moment.`
             : 'Aucun produit disponible pour le moment.'}
         />
       </div>
     </div>
+  );
+}
+
+function FilterPill({ label, active, onClick, small = false }: { label: string; active: boolean; onClick: () => void; small?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: small ? '6px 14px' : '8px 20px',
+        border: active ? '1px solid var(--accent)' : '1px solid var(--bordure)',
+        background: 'transparent',
+        color: active ? 'var(--accent)' : 'var(--texte-muted)',
+        fontSize: small ? '0.65rem' : '0.7rem',
+        letterSpacing: '0.15em',
+        textTransform: 'uppercase',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        boxShadow: active ? '0 0 0 1px var(--accent)' : 'none',
+      }}
+    >
+      {label}
+    </button>
   );
 }
 

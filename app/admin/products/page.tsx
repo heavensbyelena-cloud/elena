@@ -4,7 +4,7 @@ import Link from 'next/link';
 import AdminProductActions from './AdminProductActions';
 
 export default async function AdminProductsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/account/login');
   const { data: profileData } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
@@ -45,8 +45,8 @@ export default async function AdminProductsPage() {
               <tr key={p.id} style={{ borderBottom: '1px solid var(--bordure)' }}>
                 <td style={{ padding: '12px 16px' }}>
                   {p.image_url
-                    ? <img src={p.image_url} alt={p.name} style={{ width: 50, height: 50, objectFit: 'cover', background: 'var(--rose-clair)' }} />
-                    : <div style={{ width: 50, height: 50, background: 'var(--rose-clair)' }} />}
+                    ? <img src={p.image_url} alt={p.name} style={{ width: 50, height: 50, objectFit: 'cover', background: 'var(--accent-clair)' }} />
+                    : <div style={{ width: 50, height: 50, background: 'var(--accent-clair)' }} />}
                 </td>
                 <td style={{ padding: '12px 16px', fontFamily: "'Cormorant Garamond', serif" }}>{p.name}</td>
                 <td style={{ padding: '12px 16px', color: 'var(--gris)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{p.category}</td>

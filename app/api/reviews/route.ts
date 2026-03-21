@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('product_id');
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     let query = supabase
       .from('reviews')
@@ -43,9 +43,21 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     }]).select().single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[POST /api/reviews] Erreur Supabase:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      throw error;
+    }
     return NextResponse.json({ review: data }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  } catch (err) {
+    console.error('[POST /api/reviews] Exception:', err);
+    return NextResponse.json(
+      { error: 'Erreur serveur', debug: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
   }
 }

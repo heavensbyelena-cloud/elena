@@ -7,7 +7,7 @@ import ReviewForm from '@/components/Reviews/ReviewForm';
 import AddToCartButton from '@/components/Product/AddToCartButton';
 import type { Product, Review } from '@/types';
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
@@ -44,7 +44,8 @@ async function getReviews(productId: string): Promise<{ reviews: Review[]; avg: 
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const p = await getProduct(params.id);
+  const { id } = await params;
+  const p = await getProduct(id);
   if (!p) return { title: 'Produit introuvable' };
   return {
     title: p.name,
@@ -56,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 function fmt(n: number) { return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'; }
 
 export default async function ProductPage({ params }: Props) {
-  const id = params.id;
+  const { id } = await params;
   console.log('[product/[id]] Page — params.id:', id);
   const product = await getProduct(id);
   if (!product) {
@@ -85,22 +86,22 @@ export default async function ProductPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
 
       {/* ── Fil d'Ariane */}
-      <nav style={{ padding: '16px 40px', fontSize: '0.75rem', color: 'var(--gris)', letterSpacing: '0.1em' }}>
-        <a href="/home" style={{ color: 'var(--gris)', textDecoration: 'none' }}>Accueil</a>
+      <nav style={{ padding: '16px 40px', fontSize: '0.75rem', color: 'var(--texte-muted)', letterSpacing: '0.1em', background: 'var(--fond)' }}>
+        <a href="/home" style={{ color: 'var(--texte-muted)', textDecoration: 'none' }}>Accueil</a>
         {' / '}
-        <a href="/shop" style={{ color: 'var(--gris)', textDecoration: 'none' }}>Boutique</a>
+        <a href="/shop" style={{ color: 'var(--texte-muted)', textDecoration: 'none' }}>Boutique</a>
         {' / '}
-        <span style={{ color: 'var(--noir)' }}>{product.name}</span>
+        <span style={{ color: 'var(--accent)' }}>{product.name}</span>
       </nav>
 
       {/* ── Produit ── */}
-      <section style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', maxWidth: '1200px', margin: '0 auto', alignItems: 'start' }} className="product-detail-grid">
+      <section style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', maxWidth: '1200px', margin: '0 auto', alignItems: 'start', background: 'var(--fond)' }} className="product-detail-grid">
 
         {/* Image */}
-        <div style={{ position: 'relative', aspectRatio: '1', background: 'var(--rose-clair)', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', aspectRatio: '1', background: 'var(--fond-carte)', overflow: 'hidden', border: '1px solid var(--bordure)' }}>
           {product.badge && <span className="product-badge">{product.badge}</span>}
           <Image
-            src={product.image_url || 'https://placehold.co/600x600/F5E6E0/8A8A8A?text=Bijou'}
+            src={product.image_url || 'https://placehold.co/600x600/1A1A1A/2DA89D?text=Bijou'}
             alt={product.name}
             fill
             style={{ objectFit: 'cover' }}
@@ -112,19 +113,19 @@ export default async function ProductPage({ params }: Props) {
         {/* Infos */}
         <div style={{ paddingTop: '20px' }}>
           {product.category && (
-            <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gris)', marginBottom: '12px' }}>
+            <p style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--texte-muted)', marginBottom: '12px' }}>
               {product.category}
             </p>
           )}
           <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2.2rem', fontWeight: 400, marginBottom: '16px', lineHeight: 1.2 }}>
             {product.name}
           </h1>
-          <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.6rem', marginBottom: '28px' }}>
+          <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.6rem', marginBottom: '28px', color: 'var(--accent)' }}>
             {fmt(product.price)}
           </p>
           {/* Description : toujours afficher la section (avec fallback si vide) */}
           <div style={{ marginBottom: '32px' }}>
-            <p style={{ fontSize: '0.92rem', color: 'var(--gris)', lineHeight: 1.8 }}>
+            <p style={{ fontSize: '0.92rem', color: 'var(--texte-muted)', lineHeight: 1.8 }}>
               {product.description?.trim() ? product.description : 'Aucune description pour ce produit.'}
             </p>
           </div>
@@ -138,7 +139,7 @@ export default async function ProductPage({ params }: Props) {
               '✓ Retours acceptés sous 14 jours',
               '✓ Pièce artisanale, faite main',
             ].map(t => (
-              <p key={t} style={{ fontSize: '0.8rem', color: 'var(--gris)', letterSpacing: '0.05em' }}>{t}</p>
+              <p key={t} style={{ fontSize: '0.8rem', color: 'var(--texte-muted)', letterSpacing: '0.05em' }}>{t}</p>
             ))}
           </div>
         </div>

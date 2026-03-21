@@ -17,7 +17,7 @@ export default function ReviewCard({ review }: { review: Review }) {
       itemScope itemType="https://schema.org/Review"
     >
       <meta itemProp="reviewRating" content={String(review.rating)} />
-      <div style={{ fontSize: '0.9rem', color: 'var(--rose-poudre)', letterSpacing: '3px', marginBottom: '12px' }}>
+      <div style={{ fontSize: '0.9rem', color: 'var(--accent)', letterSpacing: '3px', marginBottom: '12px' }}>
         {stars(review.rating)}
       </div>
       <p style={{ fontSize: '0.88rem', color: 'var(--noir)', lineHeight: 1.7, marginBottom: '14px', fontStyle: 'italic' }} itemProp="reviewBody">

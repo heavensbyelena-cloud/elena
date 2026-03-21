@@ -23,7 +23,7 @@ export default function ReviewList({ reviews, averageRating, totalCount }: Props
         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '3rem', fontWeight: 400, lineHeight: 1, marginBottom: '8px' }}>
           {totalCount > 0 ? averageRating.toFixed(1) : '—'}
         </div>
-        <div style={{ fontSize: '1.4rem', color: 'var(--rose-poudre)', letterSpacing: '4px', marginBottom: '8px' }}>
+        <div style={{ fontSize: '1.4rem', color: 'var(--accent)', letterSpacing: '4px', marginBottom: '8px' }}>
           {totalCount > 0 ? stars(averageRating) : '☆☆☆☆☆'}
         </div>
         <div style={{ fontSize: '0.78rem', color: 'var(--gris)', letterSpacing: '0.1em' }}>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import AdminReviewActions from './AdminReviewActions';
 
 export default async function AdminReviewsPage({ searchParams }: { searchParams?: { status?: string } }) {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/account/login');
   const { data: profileData } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
@@ -46,7 +46,7 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams?
         {(reviews ?? []).map((r: { id: string; rating: number; comment: string; author_name: string; status: string; created_at: string }) => (
           <div key={r.id} style={{ border: '1px solid var(--bordure)', padding: '24px', display: 'flex', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ color: 'var(--rose-poudre)', fontSize: '0.9rem', marginBottom: '8px' }}>{stars(r.rating)}</div>
+              <div style={{ color: 'var(--accent)', fontSize: '0.9rem', marginBottom: '8px' }}>{stars(r.rating)}</div>
               <p style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--noir)', lineHeight: 1.6, marginBottom: '10px' }}>
                 &ldquo;{r.comment}&rdquo;
               </p>

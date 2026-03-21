@@ -13,7 +13,7 @@ export default function AdminLoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, var(--blanc) 0%, var(--rose-clair) 100%)',
+        background: 'var(--fond)',
       }}
     >
       <AdminLoginModal

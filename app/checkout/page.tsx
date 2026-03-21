@@ -220,7 +220,7 @@ export default function CheckoutPage() {
           <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', fontWeight: 400, letterSpacing: '0.1em', marginBottom: '20px' }}>Votre commande</h3>
           {items.map(item => (
             <div key={item.id} style={{ display: 'flex', gap: '12px', marginBottom: '14px', alignItems: 'center' }}>
-              <div style={{ width: 50, height: 50, background: 'var(--rose-clair)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+              <div style={{ width: 50, height: 50, background: 'var(--accent-clair)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                 <Image src={item.image_url || ''} alt={item.name} fill style={{ objectFit: 'cover' }} sizes="50px" />
               </div>
               <div style={{ flex: 1 }}>

@@ -12,9 +12,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-heavens-noir text-white hover:bg-rose-poudre',
+  primary: 'bg-heavens-noir text-white hover:bg-accent',
   secondary: 'bg-transparent border border-heavens-noir text-heavens-noir hover:bg-heavens-noir hover:text-white',
-  ghost: 'bg-transparent text-heavens-noir hover:text-rose-poudre',
+  ghost: 'bg-transparent text-heavens-noir hover:text-accent',
   danger: 'bg-red-600 text-white hover:bg-red-700',
 };
 
@@ -26,7 +26,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 
 /**
  * Bouton réutilisable — respecte le design Heaven's
- * Variants: primary (noir→rose), secondary, ghost, danger
+ * Variants: primary (noir→turquoise), secondary, ghost, danger
  */
 export default function Button({
   variant = 'primary',

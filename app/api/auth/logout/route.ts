@@ -4,7 +4,7 @@ import { COOKIE_NAME } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     await supabase.auth.signOut();
 
     const response = NextResponse.redirect(new URL('/', request.url));

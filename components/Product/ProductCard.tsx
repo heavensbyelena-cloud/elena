@@ -27,29 +27,35 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="product-card">
-      {product.badge && <span className="product-badge">{product.badge}</span>}
-
       <Link href={`/product/${product.id}`}>
-        <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden', background: 'var(--rose-clair)', position: 'relative' }}>
+        <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden', background: 'var(--fond-carte)', position: 'relative' }}>
           <Image
-            src={product.image_url || 'https://placehold.co/400x400/F5E6E0/8A8A8A?text=Bijou'}
+            src={product.image_url || 'https://placehold.co/400x400/1A1A1A/2DA89D?text=Bijou'}
             alt={product.name}
             fill
             style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
             onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
             sizes="(max-width:768px) 50vw, 25vw"
+            unoptimized={!product.image_url || product.image_url.includes('placehold.co')}
           />
         </div>
       </Link>
 
       <div style={{ padding: '22px 18px', textAlign: 'center' }}>
+        {product.badge && (
+          <div style={{ marginBottom: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+            {product.badge.split(' / ').map(b => (
+              <span key={b} className="product-badge">{b.trim()}</span>
+            ))}
+          </div>
+        )}
         <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.05rem', marginBottom: '6px' }}>
-          <Link href={`/product/${product.id}`} style={{ textDecoration: 'none', color: 'var(--noir)' }}>
+          <Link href={`/product/${product.id}`} style={{ textDecoration: 'none', color: 'var(--texte)' }}>
             {product.name}
           </Link>
         </h3>
-        <p style={{ fontSize: '0.88rem', color: 'var(--noir)', marginBottom: '14px' }}>{fmt(product.price)}</p>
+        <p style={{ fontSize: '0.88rem', color: 'var(--accent)', marginBottom: '14px' }}>{fmt(product.price)}</p>
         <button onClick={handleAdd} className="btn-primary" style={{ width: '100%', padding: '11px' }}>
           Ajouter au panier
         </button>

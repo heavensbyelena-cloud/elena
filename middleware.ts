@@ -1,33 +1,38 @@
 /**
- * Middleware — Protection du site complet (Coming Soon).
- * Seuls les admins connectés peuvent accéder à /shop, /admin, /account, etc.
- * Si non connecté ou non admin → redirection vers / (Coming Soon).
+ * Middleware — Protection des routes selon le type d'accès.
+ * - Public : /shop, /home, /product, /cart, /checkout, /orders, /legal
+ * - Admin seulement : /admin
+ * - Utilisateur connecté (user ou admin) : /account
  */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifySessionToken, COOKIE_NAME } from '@/lib/jwt';
 
-/** Routes protégées : accès réservé aux admins */
-const PROTECTED_PREFIXES = [
-  '/shop',
-  '/home',
-  '/admin',
-  '/account',
-  '/cart',
-  '/checkout',
-  '/product',
-  '/orders',
-  '/legal',
-];
+/** Routes publiques : accessibles sans connexion */
+const PUBLIC_PREFIXES = ['/shop', '/home', '/product', '/cart', '/checkout', '/orders', '/legal'];
 
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
+/** Routes admin : réservées aux admins */
+const ADMIN_PREFIX = '/admin';
+
+/** Routes compte : nécessitent une session (user ou admin) */
+const ACCOUNT_PREFIX = '/account';
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+
+function isAdminPath(pathname: string): boolean {
+  return pathname === ADMIN_PREFIX || pathname.startsWith(ADMIN_PREFIX + '/');
+}
+
+function isAccountPath(pathname: string): boolean {
+  return pathname === ACCOUNT_PREFIX || pathname.startsWith(ACCOUNT_PREFIX + '/');
 }
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  if (!isProtectedPath(pathname)) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
@@ -43,12 +48,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (!token || !payload) {
-    return NextResponse.redirect(new URL('/', request.url));
+  if (isAdminPath(pathname)) {
+    if (!token || !payload || payload.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+    return NextResponse.next();
   }
 
-  if (payload.role !== 'admin') {
-    return NextResponse.redirect(new URL('/', request.url));
+  if (isAccountPath(pathname)) {
+    if (!token || !payload) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+    return NextResponse.next();
   }
 
   return NextResponse.next();

@@ -4,15 +4,14 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ProductCategory } from '@/types';
+import { CATEGORIES } from '@/lib/categories';
+import ResineSubcatField from '@/components/Admin/ResineSubcatField';
 
-const CATS: { slug: ProductCategory; label: string }[] = [
-  { slug: 'boucles',   label: "Boucles d'oreille" },
-  { slug: 'colliers',  label: 'Colliers' },
-  { slug: 'parrure',   label: 'Parrure' },
-  { slug: 'bougies',   label: 'Bougies' },
-  { slug: 'lunettes',  label: 'Lunettes' },
-  { slug: 'sacs',      label: 'Sacs à mains' },
-];
+// Catégories parentes uniquement (pas les sous-catégories résine — gérées séparément)
+const CATS: { slug: string; label: string }[] = CATEGORIES.map(cat => ({
+  slug: cat.slug,
+  label: cat.label,
+}));
 
 // Badges prédéfinis, sélectionnables et cumulables
 const BADGES: string[] = ['Fait main', 'Nouveau', 'Best-seller', 'Pièce unique', 'Edition limitée'];
@@ -33,6 +32,19 @@ export default function AdminNewProductPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // "resine" = catégorie parente sélectionnée → affiche ResineSubcatField
+  const parentCategory = form.category.startsWith('resine-') ? 'resine' : form.category;
+  const isResineParent = parentCategory === 'resine';
+
+  function handleParentCategoryChange(slug: string) {
+    if (slug === 'resine') {
+      // On garde 'resine' temporairement — ResineSubcatField posera le vrai slug
+      update('category', 'resine');
+    } else {
+      update('category', slug);
+    }
+  }
 
   function update(k: string, v: string) {
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -85,8 +97,10 @@ export default function AdminNewProductPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.price || !form.category) {
-      setError('Nom, prix et catégorie sont requis.');
+    if (!form.name || !form.price || !form.category || form.category === 'resine') {
+      setError(form.category === 'resine'
+        ? 'Veuillez choisir ou créer une sous-catégorie résine.'
+        : 'Nom, prix et catégorie sont requis.');
       return;
     }
     if (!imageFile) {
@@ -204,7 +218,7 @@ export default function AdminNewProductPage() {
           <div style={{ marginBottom: '24px' }}>
             <p className="form-label">Aperçu</p>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
-              <img src={imagePreviewUrl} alt="Aperçu" style={{ width: '160px', height: '160px', objectFit: 'cover', background: 'var(--rose-clair)', border: '1px solid var(--bordure)' }} />
+              <img src={imagePreviewUrl} alt="Aperçu" style={{ width: '160px', height: '160px', objectFit: 'cover', background: 'var(--accent-clair)', border: '1px solid var(--bordure)' }} />
               <button type="button" onClick={clearImage} style={{ padding: '8px 16px', fontSize: '0.75rem', background: 'transparent', border: '1px solid var(--bordure)', color: 'var(--gris)', cursor: 'pointer' }}>
                 Changer l&apos;image
               </button>
@@ -214,14 +228,25 @@ export default function AdminNewProductPage() {
 
         <div style={{ marginBottom: '18px' }}>
           <label className="form-label">Catégorie *</label>
-          <select value={form.category} onChange={e => update('category', e.target.value)} className="form-input" style={{ appearance: 'none' }}>
+          <select
+            value={parentCategory}
+            onChange={e => handleParentCategoryChange(e.target.value)}
+            className="form-input"
+            style={{ appearance: 'none' }}
+          >
             <option value="">— Choisir —</option>
             {CATS.map(c => (
-              <option key={c.slug} value={c.slug}>
-                {c.label}
-              </option>
+              <option key={c.slug} value={c.slug}>{c.label}</option>
             ))}
           </select>
+
+          {/* Sous-catégorie résine — apparaît uniquement si "Création Résine" est choisi */}
+          {isResineParent && (
+            <ResineSubcatField
+              value={form.category.startsWith('resine-') ? form.category : ''}
+              onChange={slug => update('category', slug || 'resine')}
+            />
+          )}
         </div>
 
         <div style={{ marginBottom: '28px' }}>

@@ -21,7 +21,7 @@ interface OrderRow {
  * Données chargées côté serveur avec createAdminClient (pas de dépendance session Supabase).
  */
 export default async function AdminDashboardPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) {
     redirect('/api/auth/sync-session?then=/admin');

@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[create-session] Stripe Session créée:', { sessionId: session.id, url: session.url ? 'ok' : 'manquant' });
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     const admin = createAdminClient();
 

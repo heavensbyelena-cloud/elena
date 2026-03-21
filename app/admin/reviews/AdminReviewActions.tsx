@@ -6,12 +6,19 @@ export default function AdminReviewActions({ reviewId, currentStatus }: { review
   const router = useRouter();
 
   async function update(status: string) {
-    await fetch(`/api/reviews/${reviewId}`, {
+    const res = await fetch(`/api/reviews/${reviewId}`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
-    router.refresh();
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      console.error('[AdminReviewActions] Erreur:', data);
+      alert('Erreur lors de la mise à jour : ' + (data.error ?? res.status));
+    }
   }
 
   return (

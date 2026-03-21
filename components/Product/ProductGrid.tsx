@@ -19,35 +19,23 @@ export default function ProductGrid({ products, loading = false, emptyMessage = 
 
   if (loading) {
     return (
-      <>
-        <div style={gridStyle} className="products-grid-responsive">
-          {Array(8).fill(0).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-        <style>{`
-          @media(max-width:968px){ .products-grid-responsive{ grid-template-columns:repeat(2,1fr) !important; gap:24px !important; } }
-          @media(max-width:480px){ .products-grid-responsive{ grid-template-columns:1fr !important; } }
-        `}</style>
-      </>
+      <div style={gridStyle} className="products-grid-responsive">
+        {Array(8).fill(0).map((_, i) => <SkeletonCard key={i} />)}
+      </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--gris)', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', padding: '60px 20px' }}>
+      <p style={{ textAlign: 'center', color: 'var(--texte-muted)', fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', padding: '60px 20px' }}>
         {emptyMessage}
       </p>
     );
   }
 
   return (
-    <>
-      <div style={gridStyle} className="products-grid-responsive">
-        {products.map(p => <ProductCard key={p.id} product={p} />)}
-      </div>
-      <style>{`
-        @media(max-width:968px){ .products-grid-responsive{ grid-template-columns:repeat(2,1fr) !important; gap:24px !important; } }
-        @media(max-width:480px){ .products-grid-responsive{ grid-template-columns:1fr !important; } }
-      `}</style>
-    </>
+    <div style={gridStyle} className="products-grid-responsive">
+      {products.map(p => <ProductCard key={p.id} product={p} />)}
+    </div>
   );
 }

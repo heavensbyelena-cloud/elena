@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const session = await getSessionFromRequest(request);
     if (!session) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     let query = supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (session.role !== 'admin') query = query.eq('user_id', session.sub);
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     console.log('[POST /api/orders] User:', user ? { id: user.id, email: user.email } : 'non connecté');

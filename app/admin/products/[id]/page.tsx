@@ -5,15 +5,16 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ProductCategory } from '@/types';
+import { CATEGORIES } from '@/lib/categories';
+import ResineSubcatField from '@/components/Admin/ResineSubcatField';
 
-const CATS: { slug: ProductCategory; label: string }[] = [
-  { slug: 'boucles',   label: "Boucles d'oreille" },
-  { slug: 'colliers',  label: 'Colliers' },
-  { slug: 'parrure',   label: 'Parrure' },
-  { slug: 'bougies',   label: 'Bougies' },
-  { slug: 'lunettes',  label: 'Lunettes' },
-  { slug: 'sacs',      label: 'Sacs à mains' },
-];
+// Catégories parentes uniquement
+const CATS: { slug: string; label: string }[] = CATEGORIES.map(cat => ({
+  slug: cat.slug,
+  label: cat.label,
+}));
+
+const BADGES: string[] = ['Fait main', 'Nouveau', 'Best-seller', 'Pièce unique', 'Edition limitée'];
 
 const initialForm = {
   name: '',
@@ -29,6 +30,7 @@ export default function AdminEditProductPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [form, setForm] = useState(initialForm);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState('');
@@ -55,15 +57,19 @@ export default function AdminEditProductPage() {
         if (!data) return;
         const p = data.product;
         if (p) {
+          const badgeValue = p.badge ?? '';
           setForm({
             name: p.name ?? '',
             description: p.description ?? '',
             price: String(p.price ?? ''),
             category: p.category ?? '',
-            badge: p.badge ?? '',
+            badge: badgeValue,
             stock: p.stock != null && p.stock !== '' ? String(p.stock) : '',
             image_url: p.image_url ?? '',
           });
+          // Pré-sélectionner les badges existants
+          const existing = badgeValue.split(' / ').map((b: string) => b.trim()).filter(Boolean);
+          setSelectedBadges(existing);
         } else {
           setFetchError('Produit introuvable');
         }
@@ -76,12 +82,30 @@ export default function AdminEditProductPage() {
     setForm(prev => ({ ...prev, [k]: v }));
   }
 
+  function toggleBadge(badge: string) {
+    setSelectedBadges(prev => {
+      const exists = prev.includes(badge);
+      const next = exists ? prev.filter(b => b !== badge) : [...prev, badge];
+      setForm(current => ({ ...current, badge: next.join(' / ') }));
+      return next;
+    });
+  }
+
+  const parentCategory = form.category.startsWith('resine-') ? 'resine' : form.category;
+  const isResineParent = parentCategory === 'resine';
+
+  function handleParentCategoryChange(slug: string) {
+    update('category', slug === 'resine' ? 'resine' : slug);
+  }
+
   // À la soumission : PUT /api/products/[id]
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!id) return;
-    if (!form.name || !form.price || !form.category) {
-      setError('Nom, prix et catégorie sont requis.');
+    if (!form.name || !form.price || !form.category || form.category === 'resine') {
+      setError(form.category === 'resine'
+        ? 'Veuillez choisir ou créer une sous-catégorie résine.'
+        : 'Nom, prix et catégorie sont requis.');
       return;
     }
     setLoading(true);
@@ -143,9 +167,8 @@ export default function AdminEditProductPage() {
         {[
           { key: 'name',      label: 'Nom *',      type: 'text',   placeholder: 'Collier Lumière' },
           { key: 'price',     label: 'Prix (€) *', type: 'number', placeholder: '65.00' },
-          { key: 'badge',     label: 'Badge',      type: 'text',   placeholder: 'Fait main' },
           { key: 'stock',     label: 'Stock',      type: 'number', placeholder: 'Vide = illimité' },
-          { key: 'image_url', label: 'URL image', type: 'url',    placeholder: 'https://...' },
+          { key: 'image_url', label: 'URL image',  type: 'url',    placeholder: 'https://...' },
         ].map(f => (
           <div key={f.key} style={{ marginBottom: '18px' }}>
             <label className="form-label">{f.label}</label>
@@ -160,21 +183,61 @@ export default function AdminEditProductPage() {
           </div>
         ))}
 
+        {/* Badges sélectionnables et cumulables */}
+        <div style={{ marginBottom: '18px' }}>
+          <label className="form-label">Badges (cumulables)</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+            {BADGES.map(badge => {
+              const active = selectedBadges.includes(badge);
+              return (
+                <button
+                  key={badge}
+                  type="button"
+                  onClick={() => toggleBadge(badge)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.75rem',
+                    border: active ? '1px solid var(--noir)' : '1px solid var(--bordure)',
+                    background: active ? 'var(--noir)' : 'transparent',
+                    color: active ? 'var(--blanc)' : 'var(--gris)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {badge}
+                </button>
+              );
+            })}
+          </div>
+          {form.badge && (
+            <p style={{ fontSize: '0.78rem', color: 'var(--gris)' }}>
+              Badges sélectionnés : <strong>{form.badge}</strong>
+            </p>
+          )}
+        </div>
+
         <div style={{ marginBottom: '18px' }}>
           <label className="form-label">Catégorie *</label>
           <select
-            value={form.category}
-            onChange={e => update('category', e.target.value)}
+            value={parentCategory}
+            onChange={e => handleParentCategoryChange(e.target.value)}
             className="form-input"
             style={{ appearance: 'none' }}
           >
             <option value="">— Choisir —</option>
             {CATS.map(c => (
-              <option key={c.slug} value={c.slug}>
-                {c.label}
-              </option>
+              <option key={c.slug} value={c.slug}>{c.label}</option>
             ))}
           </select>
+
+          {/* Sous-catégorie résine — apparaît uniquement si "Création Résine" est choisi */}
+          {isResineParent && (
+            <ResineSubcatField
+              value={form.category.startsWith('resine-') ? form.category : ''}
+              onChange={slug => update('category', slug || 'resine')}
+            />
+          )}
         </div>
 
         <div style={{ marginBottom: '28px' }}>
@@ -193,7 +256,7 @@ export default function AdminEditProductPage() {
         {form.image_url ? (
           <div style={{ marginBottom: '24px' }}>
             <p className="form-label">Image actuelle</p>
-            <div style={{ position: 'relative', width: 160, height: 160, background: 'var(--rose-clair)', overflow: 'hidden', border: '1px solid var(--bordure)' }}>
+            <div style={{ position: 'relative', width: 160, height: 160, background: 'var(--accent-clair)', overflow: 'hidden', border: '1px solid var(--bordure)' }}>
               <Image
                 src={form.image_url}
                 alt="Aperçu"

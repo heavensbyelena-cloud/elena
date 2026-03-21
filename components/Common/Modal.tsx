@@ -61,10 +61,10 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
       <div
         style={{
           position: 'relative',
-          background: 'var(--blanc)',
+          background: 'var(--fond-carte)',
           border: '1px solid var(--bordure)',
           borderRadius: '4px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
           maxHeight: '90vh',
           overflow: 'auto',
         }}

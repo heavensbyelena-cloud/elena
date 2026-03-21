@@ -4,7 +4,7 @@
 
 /**
  * Navigation principale — liens catégories
- * Soulignement rose poudre au hover et sur la page active
+ * Soulignement turquoise au hover et sur la page active
  */
 export default function Navigation() {
   return (

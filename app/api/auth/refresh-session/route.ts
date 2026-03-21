@@ -11,7 +11,7 @@ import type { UserRole } from '@/types';
 
 export async function POST() {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {

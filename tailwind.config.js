@@ -7,14 +7,14 @@ module.exports = {
   ],
   theme: {
     extend: {
-      // Couleurs "Heaven's By Elena"
+      // Couleurs palette luxe turquoise pastel
       colors: {
-        'rose-poudre': '#E8C4B8',
-        'rose-clair': '#F5E6E0',
-        'bordure': '#F0E0D8',
-        'fond-casse': '#FAFAFA',
-        'heavens-noir': '#1A1A1A',
-        'heavens-gris': '#8A8A8A',
+        'accent': '#8FD5D1',
+        'accent-clair': '#1A2528',
+        'bordure': 'rgba(143, 213, 209, 0.2)',
+        'fond-casse': '#12110E',
+        'heavens-noir': '#060606',
+        'heavens-gris': '#9A9288',
       },
       // Polices
       fontFamily: {
@@ -42,9 +42,9 @@ module.exports = {
       },
       // Box shadows luxe
       boxShadow: {
-        'product': '0 4px 20px rgba(232, 196, 184, 0.2)',
-        'cart': '0 8px 40px rgba(26, 26, 26, 0.15)',
-        'modal': '0 20px 60px rgba(26, 26, 26, 0.2)',
+        'product': '0 8px 32px rgba(0, 0, 0, 0.3)',
+        'cart': '0 8px 40px rgba(10, 10, 10, 0.15)',
+        'modal': '0 20px 60px rgba(10, 10, 10, 0.2)',
       },
       // Animation shimmer (skeleton loader)
       keyframes: {

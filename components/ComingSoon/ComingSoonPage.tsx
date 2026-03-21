@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import AdminLoginModal from './AdminLoginModal';
 
 export default function ComingSoonPage() {
@@ -16,7 +17,7 @@ export default function ComingSoonPage() {
           justifyContent: 'center',
           alignItems: 'center',
           padding: '60px 40px',
-          background: 'linear-gradient(135deg, var(--blanc) 0%, var(--rose-clair) 100%)',
+          background: 'var(--fond)',
         }}
       >
         <div
@@ -28,30 +29,14 @@ export default function ComingSoonPage() {
         >
           {/* Logo */}
           <div style={{ marginBottom: '40px' }}>
-            <span
-              style={{
-                fontFamily: "'Great Vibes', cursive",
-                fontSize: '3.5rem',
-                color: 'var(--noir)',
-                display: 'block',
-                lineHeight: 1.2,
-              }}
-            >
-              Heaven&apos;s
-            </span>
-            <span
-              style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontSize: '0.8rem',
-                fontVariant: 'small-caps',
-                letterSpacing: '0.4em',
-                color: 'var(--noir)',
-                marginTop: '-8px',
-                display: 'block',
-              }}
-            >
-              By Elena
-            </span>
+            <Image
+              src="/logo.png"
+              alt="Heaven's By Elena"
+              width={660}
+              height={300}
+              style={{ objectFit: 'contain', maxHeight: '300px' }}
+              priority
+            />
           </div>
 
           {/* Titre */}
@@ -63,27 +48,28 @@ export default function ComingSoonPage() {
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
               marginBottom: '12px',
-              color: 'var(--noir)',
+              color: 'var(--texte)',
             }}
           >
             Bientôt Ouvert
           </h1>
 
           {/* Ligne décorative */}
-          <div
-            style={{
-              width: 60,
-              height: 1,
-              background: 'var(--rose-poudre)',
-              margin: '24px auto 32px',
-            }}
-          />
+            <div
+              style={{
+                width: 60,
+                height: 2,
+                background: 'linear-gradient(90deg, transparent, var(--accent), transparent)',
+                boxShadow: '0 0 20px var(--accent-glow)',
+                margin: '24px auto 32px',
+              }}
+            />
 
           {/* Description */}
           <div
             style={{
               fontSize: '1rem',
-              color: 'var(--gris)',
+              color: 'var(--texte-muted)',
               marginBottom: '40px',
               lineHeight: 1.8,
               maxWidth: 500,
@@ -114,7 +100,7 @@ export default function ComingSoonPage() {
                 fontSize: '0.75rem',
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
-                color: 'var(--gris)',
+                color: 'var(--texte-muted)',
                 marginBottom: '12px',
                 display: 'block',
               }}
@@ -125,7 +111,7 @@ export default function ComingSoonPage() {
               style={{
                 width: '100%',
                 height: 2,
-                background: 'var(--rose-clair)',
+                background: 'var(--accent-clair)',
                 borderRadius: 2,
                 overflow: 'hidden',
               }}
@@ -133,7 +119,7 @@ export default function ComingSoonPage() {
               <div
                 style={{
                   height: '100%',
-                  background: 'var(--rose-poudre)',
+                  background: 'var(--accent)',
                   width: '65%',
                   borderRadius: 2,
                   animation: 'loadingAnimation 2s ease-in-out infinite',
@@ -159,7 +145,7 @@ export default function ComingSoonPage() {
               rel="noopener noreferrer"
               style={{
                 textDecoration: 'none',
-                color: 'var(--noir)',
+                color: 'var(--texte)',
                 fontSize: '0.75rem',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
@@ -177,7 +163,7 @@ export default function ComingSoonPage() {
               rel="noopener noreferrer"
               style={{
                 textDecoration: 'none',
-                color: 'var(--noir)',
+                color: 'var(--texte)',
                 fontSize: '0.75rem',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
@@ -195,7 +181,7 @@ export default function ComingSoonPage() {
               rel="noopener noreferrer"
               style={{
                 textDecoration: 'none',
-                color: 'var(--noir)',
+                color: 'var(--texte)',
                 fontSize: '0.75rem',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
@@ -214,9 +200,9 @@ export default function ComingSoonPage() {
               type="button"
               onClick={() => setShowAdminModal(true)}
               style={{
-                background: 'rgba(0,0,0,0.08)',
-                border: '1px solid rgba(0,0,0,0.2)',
-                color: '#333',
+                background: 'var(--fond-carte)',
+                border: '1px solid var(--bordure)',
+                color: 'var(--texte)',
                 fontSize: '0.75rem',
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
@@ -226,10 +212,12 @@ export default function ComingSoonPage() {
                 transition: 'background 0.2s ease, opacity 0.2s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(0,0,0,0.12)';
+                e.currentTarget.style.background = 'var(--accent)';
+                e.currentTarget.style.borderColor = 'var(--accent)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(0,0,0,0.08)';
+                e.currentTarget.style.background = 'var(--fond-carte)';
+                e.currentTarget.style.borderColor = 'var(--bordure)';
               }}
             >
               Admin
@@ -253,8 +241,8 @@ export default function ComingSoonPage() {
               100% { width: 65%; }
             }
             .social-link:hover {
-              border-bottom-color: var(--rose-poudre) !important;
-              color: var(--rose-poudre) !important;
+              border-bottom-color: var(--accent) !important;
+              color: var(--accent) !important;
             }
           `,
         }}

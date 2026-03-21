@@ -13,11 +13,37 @@ export default function AdminProductActions({ productId }: { productId: string }
   }
 
   return (
-    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-      <Link href={`/admin/products/${productId}`} style={{ fontSize: '0.72rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--noir)', textDecoration: 'underline' }}>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <Link
+        href={`/admin/products/${productId}`}
+        style={{
+          fontSize: '0.7rem',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: 'var(--blanc)',
+          background: 'var(--noir)',
+          border: '1px solid var(--noir)',
+          padding: '6px 14px',
+          textDecoration: 'none',
+          whiteSpace: 'nowrap',
+        }}
+      >
         Modifier
       </Link>
-      <button onClick={handleDelete} style={{ background: 'none', border: 'none', fontSize: '0.72rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#c05050', cursor: 'pointer', textDecoration: 'underline' }}>
+      <button
+        onClick={handleDelete}
+        style={{
+          background: 'none',
+          border: '1px solid #c05050',
+          fontSize: '0.7rem',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: '#c05050',
+          cursor: 'pointer',
+          padding: '6px 14px',
+          whiteSpace: 'nowrap',
+        }}
+      >
         Supprimer
       </button>
     </div>

@@ -29,7 +29,7 @@ export default function CartPage() {
         <div>
           {items.map(item => (
             <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '90px 1fr auto', gap: '20px', alignItems: 'center', padding: '20px 0', borderBottom: '1px solid var(--bordure)' }}>
-              <div style={{ width: 90, height: 90, background: 'var(--rose-clair)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+              <div style={{ width: 90, height: 90, background: 'var(--accent-clair)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                 <Image src={item.image_url || 'https://placehold.co/90x90/F5E6E0/8A8A8A?text=Bijou'} alt={item.name} fill style={{ objectFit: 'cover' }} sizes="90px" />
               </div>
               <div>
@@ -65,7 +65,7 @@ export default function CartPage() {
             <span>Livraison</span><span>{shipping === 0 ? 'Offerte' : fmt(shipping)}</span>
           </div>
           {shipping > 0 && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--rose-poudre)', marginBottom: '16px' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--accent)', marginBottom: '16px' }}>
               Plus que {fmt(60 - total)} pour la livraison offerte
             </p>
           )}

@@ -5,6 +5,7 @@ import { CartProvider } from '@/context/CartContext';
 import { ToastProvider } from '@/context/ToastContext';
 import ConditionalLayout from '@/components/Layout/ConditionalLayout';
 import { verifySessionToken, COOKIE_NAME } from '@/lib/jwt';
+import { createAdminClient } from '@/lib/supabase-server';
 
 export const metadata: Metadata = {
   title: {
@@ -32,6 +33,8 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let isAdmin = false;
+  let resineSubcats: string[] = [];
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get(COOKIE_NAME)?.value;
@@ -41,6 +44,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     }
   } catch {
     // pas de session ou JWT invalide → pas admin
+  }
+
+  try {
+    // Récupère les slugs résine uniques depuis les produits actifs
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from('products')
+      .select('category')
+      .like('category', 'resine-%')
+      .eq('is_active', true);
+    if (data) {
+      resineSubcats = [...new Set(data.map((p: { category: string }) => p.category))];
+    }
+  } catch {
+    // Pas de produits résine ou erreur → on laisse vide
   }
 
   return (
@@ -56,7 +74,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ToastProvider>
         <CartProvider>
-          <ConditionalLayout isAdmin={isAdmin}>
+          <ConditionalLayout isAdmin={isAdmin} resineSubcats={resineSubcats}>
             {children}
           </ConditionalLayout>
         </CartProvider>
