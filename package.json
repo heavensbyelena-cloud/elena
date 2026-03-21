@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-   "build:cf": "next build && rimraf .next/cache && npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && cp .open-next/worker.js .open-next/_worker.js",
+   "build:cf": "next build && rimraf .next/cache && npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && cp .open-next/worker.js .open-next/assets/_worker.js",
     "deploy": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && wrangler deploy --yes",
     "preview": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && opennextjs-cloudflare preview",
     "cf:secrets": "wrangler secret bulk .env.local",
