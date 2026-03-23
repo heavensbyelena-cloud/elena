@@ -1,9 +1,8 @@
 /**
  * Upload d'images vers Cloudinary (côté serveur).
+ * Utilise fetch() au lieu du SDK Node.js pour compatibilité Cloudflare Workers.
  * Variables d'environnement : CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
  */
-import { v2 as cloudinary } from 'cloudinary';
-
 const FOLDER = 'heaven-products';
 
 function getConfig() {
@@ -19,42 +18,64 @@ function getConfig() {
 }
 
 /**
- * Upload une image (buffer) vers Cloudinary.
- * @param buffer - Contenu binaire de l'image
- * @param mimeType - Ex: image/jpeg, image/png
- * @returns { url, public_id }
+ * Upload une image (buffer) vers Cloudinary via l'API REST (fetch).
+ * Compatible avec Cloudflare Workers (pas de https.request Node.js).
  */
+/** Encode buffer en base64 (compatible Cloudflare Workers, évite la limite d'arguments) */
+function toBase64(buffer: Buffer | ArrayBuffer | Uint8Array): string {
+  if (typeof Buffer !== 'undefined' && Buffer.isBuffer && Buffer.isBuffer(buffer)) {
+    return (buffer as Buffer).toString('base64');
+  }
+  const data = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : (buffer as Uint8Array);
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let i = 0; i < data.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, Array.from(data.subarray(i, i + CHUNK)));
+  }
+  return btoa(binary);
+}
+
 export async function uploadImage(
-  buffer: Buffer,
+  buffer: Buffer | ArrayBuffer | Uint8Array,
   mimeType: string = 'image/jpeg'
 ): Promise<{ url: string; public_id: string }> {
   const config = getConfig();
-  cloudinary.config(config);
+  const base64 = toBase64(buffer);
 
-  return new Promise((resolve, reject) => {
-    const base64 = buffer.toString('base64');
-    const dataUri = `data:${mimeType};base64,${base64}`;
+  const dataUri = `data:${mimeType};base64,${base64}`;
 
-    cloudinary.uploader.upload(
-      dataUri,
-      {
-        folder: FOLDER,
-        resource_type: 'image',
-      },
-      (err, result) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        if (!result || !result.secure_url || !result.public_id) {
-          reject(new Error('Cloudinary: réponse invalide'));
-          return;
-        }
-        resolve({
-          url: result.secure_url,
-          public_id: result.public_id,
-        });
-      }
-    );
+  const formData = new FormData();
+  formData.append('file', dataUri);
+  formData.append('folder', FOLDER);
+  formData.append('resource_type', 'image');
+
+  const credentials = btoa(`${config.api_key}:${config.api_secret}`);
+  const url = `https://api.cloudinary.com/v1_1/${config.cloud_name}/image/upload`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+    },
+    body: formData,
   });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Cloudinary: ${response.status} - ${errText || response.statusText}`);
+  }
+
+  const result = (await response.json()) as {
+    secure_url?: string;
+    public_id?: string;
+  };
+
+  if (!result?.secure_url || !result?.public_id) {
+    throw new Error('Cloudinary: réponse invalide');
+  }
+
+  return {
+    url: result.secure_url,
+    public_id: result.public_id,
+  };
 }
