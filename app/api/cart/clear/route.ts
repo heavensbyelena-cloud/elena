@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
 
 export async function POST(_request: NextRequest) {
   try {
@@ -12,7 +12,9 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const { error } = await supabase
+    const db = createAdminClient();
+
+    const { error } = await db
       .from('cart_items')
       .delete()
       .eq('user_id', user.id);

@@ -3,6 +3,7 @@
  * Utilise next/headers — à importer UNIQUEMENT dans du code serveur (pas dans Client Components).
  */
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { Database } from './database.types';
 
@@ -38,15 +39,27 @@ export async function createServerSupabaseClient() {
 // Client admin (service_role) — serveur uniquement, bypass RLS
 // --------------------------------------------------------
 export function createAdminClient() {
-  if (typeof window !== 'undefined') {
-    throw new Error('createAdminClient ne peut être utilisé que côté serveur.');
-  }
-
-  const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
-
-  return createSupabaseClient<Database>(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false } }
+  );
+}
+
+// --------------------------------------------------------
+// Client anon sans session — signUp / auth depuis une route API
+// (pas de cookies ; évite de mélanger avec la session navigateur)
+// --------------------------------------------------------
+export function createAnonAuthClient() {
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    }
   );
 }

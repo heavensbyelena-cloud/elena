@@ -171,6 +171,51 @@
     animation: shimmer 1.5s infinite;
     border-radius: 2px;
   }
+
+  /**
+   * Cartes / formulaires sur fond clair (ex. connexion, inscription).
+   * Sans cela, les h1 héritent de --texte (ivoire) et les inputs du thème sombre → illisible.
+   */
+  .surface-light {
+    color: var(--noir);
+  }
+  .surface-light h1,
+  .surface-light h2 {
+    color: var(--noir);
+  }
+  .surface-light > p {
+    color: var(--gris-fonce);
+  }
+  .surface-light .form-label {
+    color: var(--gris-fonce);
+  }
+  .surface-light .form-input {
+    background: #ffffff;
+    border: 1px solid rgba(6, 6, 6, 0.2);
+    color: var(--noir);
+  }
+  .surface-light .form-input:focus {
+    border-color: var(--accent);
+  }
+  .surface-light .form-input::placeholder {
+    color: var(--gris);
+  }
+  .surface-light .btn-primary {
+    background: var(--noir);
+    color: var(--blanc);
+    border: 1px solid var(--noir);
+  }
+  .surface-light .btn-primary:hover:not(:disabled) {
+    background: var(--accent-clair);
+    border-color: var(--accent-clair);
+    color: var(--blanc);
+  }
+  .surface-light .link-subtle {
+    color: var(--gris-fonce);
+  }
+  .surface-light .link-subtle:hover {
+    color: var(--noir);
+  }
 }
 
 /* ── UTILITAIRES ──────────────────────────────────────── */

@@ -45,9 +45,19 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
   const { data: order } = await admin
     .from('orders')
-    .select('id, user_id, customer_name, customer_email, items, shipping_address, subtotal, shipping_cost, total_price, total, status, created_at, notes')
+    .select('id, user_id, customer_name, customer_email, items, shipping_address, subtotal, shipping_cost, total_price, total, discount_amount, promo_code_id, status, created_at, notes')
     .eq('id', Number(id))
     .maybeSingle();
+
+  let promoCode: string | null = null;
+  if (order?.promo_code_id) {
+    const { data: promoRow } = await admin
+      .from('promo_codes')
+      .select('code')
+      .eq('id', order.promo_code_id)
+      .maybeSingle();
+    promoCode = promoRow?.code ?? null;
+  }
 
   if (!order) {
     return (
@@ -66,9 +76,10 @@ export default async function OrderDetailPage({ params }: PageProps) {
     redirect('/account/dashboard');
   }
 
-  const subtotal   = order.subtotal ?? 0;
-  const shipping   = order.shipping_cost ?? 0;
-  const total      = order.total_price ?? order.total ?? subtotal + shipping;
+  const subtotal        = order.subtotal ?? 0;
+  const shipping        = order.shipping_cost ?? 0;
+  const discountAmount  = (order as Record<string, unknown>).discount_amount as number ?? 0;
+  const total           = order.total_price ?? order.total ?? subtotal + shipping;
   const statusLabel = translateStatus(order.status);
   const sc         = statusColor(order.status);
   const isAdmin    = !!profile?.is_admin;
@@ -151,12 +162,39 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <InfoRow label="Sous-total" value={formatPrice(subtotal)} />
+            {discountAmount > 0 && promoCode && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '16px', fontSize: '0.92rem' }}>
+                <span style={{ color: 'var(--texte-muted)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  Code promo
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '2px 8px',
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    border: '1px solid rgba(143,213,209,0.4)',
+                    background: 'rgba(143,213,209,0.08)',
+                    color: 'var(--accent)',
+                  }}>
+                    {promoCode}
+                  </span>
+                </span>
+                <span style={{ color: '#7ab87a' }}>−{formatPrice(discountAmount)}</span>
+              </div>
+            )}
             <InfoRow label="Livraison"  value={shipping === 0 ? 'Offerte' : formatPrice(shipping)} />
             <div style={{ borderTop: '1px solid var(--bordure)', paddingTop: '14px', marginTop: '2px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '16px' }}>
               <span style={{ fontSize: '0.78rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--texte-muted)' }}>Total</span>
-              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem', color: 'var(--accent)' }}>
-                {formatPrice(total)}
-              </span>
+              <div style={{ textAlign: 'right' }}>
+                {discountAmount > 0 && (
+                  <p style={{ fontSize: '0.82rem', color: 'var(--texte-muted)', textDecoration: 'line-through', marginBottom: '2px' }}>
+                    {formatPrice(subtotal + shipping)}
+                  </p>
+                )}
+                <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem', color: 'var(--accent)' }}>
+                  {formatPrice(total)}
+                </span>
+              </div>
             </div>
           </div>
           {order.notes && (

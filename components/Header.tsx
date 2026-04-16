@@ -8,6 +8,8 @@ import { useCart } from '@/context/CartContext';
 import { NAV_LEFT, NAV_RIGHT, getResineSubcatLabel } from '@/lib/categories';
 
 interface HeaderProps {
+  /** Utilisateur avec session + ligne profiles (getCurrentUser) */
+  isLoggedIn?: boolean;
   isAdmin?: boolean;
   resineSubcats?: string[];
 }
@@ -233,7 +235,7 @@ function ResineAccordion({
   );
 }
 
-export default function Header({ isAdmin = false, resineSubcats = [] }: HeaderProps) {
+export default function Header({ isLoggedIn = false, isAdmin = false, resineSubcats = [] }: HeaderProps) {
   const { count, openCart } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -290,16 +292,16 @@ export default function Header({ isAdmin = false, resineSubcats = [] }: HeaderPr
                 👤
               </Link>
               {isAdmin && (
-                <>
-                  <a href="/admin" style={{ color: 'var(--texte-muted)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none' }}>
-                    Admin
-                  </a>
-                  <form action="/api/auth/logout" method="POST" style={{ display: 'inline' }}>
-                    <button type="submit" style={{ background: 'none', border: 'none', color: 'var(--gris)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-                      Déconnexion
-                    </button>
-                  </form>
-                </>
+                <a href="/admin" style={{ color: 'var(--texte-muted)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none' }}>
+                  Admin
+                </a>
+              )}
+              {isLoggedIn && (
+                <form action="/api/auth/logout" method="POST" style={{ display: 'inline' }}>
+                  <button type="submit" style={{ background: 'none', border: 'none', color: 'var(--gris)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                    Déconnexion
+                  </button>
+                </form>
               )}
               <div style={{ width: '1px', height: '20px', background: 'var(--bordure)', margin: '0 4px' }} />
               {NAV_LEFT.map(link => (
@@ -307,16 +309,31 @@ export default function Header({ isAdmin = false, resineSubcats = [] }: HeaderPr
               ))}
             </div>
 
-            {/* Centre : Logo */}
-            <Link href="/home" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', display: 'flex', justifyContent: 'center', alignItems: 'center', textDecoration: 'none', zIndex: 10 }}>
-              <Image
-                src="/logo.png"
-                alt="Heaven's By Elena"
-                width={250}
-                height={250}
-                style={{ objectFit: 'contain', width: 'auto', height: '250px' }}
-                priority
-              />
+            {/* Centre : Logo (fill + boîte = pas d’avertissement width/height Next/Image) */}
+            <Link
+              href="/home"
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 10,
+                textDecoration: 'none',
+                display: 'block',
+                width: 250,
+                height: 250,
+              }}
+            >
+              <span style={{ position: 'relative', display: 'block', width: '100%', height: '100%' }}>
+                <Image
+                  src="/logo.png"
+                  alt="Heaven's By Elena"
+                  fill
+                  sizes="250px"
+                  style={{ objectFit: 'contain' }}
+                  priority
+                />
+              </span>
             </Link>
             <div />
 
@@ -343,13 +360,14 @@ export default function Header({ isAdmin = false, resineSubcats = [] }: HeaderPr
         </div>
 
         {/* ── MOBILE (masqué en desktop via CSS) ── */}
-        <div className="header-mobile" style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 20px',
-              height: '70px',
-            }}
+        <div
+          className="header-mobile"
+          style={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 20px',
+            height: '70px',
+          }}
           >
             {/* Gauche : hamburger */}
             <button
@@ -384,15 +402,8 @@ export default function Header({ isAdmin = false, resineSubcats = [] }: HeaderPr
             </button>
 
             {/* Centre : Logo */}
-            <Link href="/home" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-              <Image
-                src="/logo.png"
-                alt="Heaven's By Elena"
-                width={120}
-                height={120}
-                style={{ objectFit: 'contain', width: 'auto', height: '110px' }}
-                priority
-              />
+            <Link href="/home" style={{ display: 'block', textDecoration: 'none', width: 120, height: 110, position: 'relative' }}>
+              <Image src="/logo.png" alt="Heaven's By Elena" fill sizes="120px" style={{ objectFit: 'contain' }} priority />
             </Link>
 
             {/* Droite : compte + panier */}
@@ -448,8 +459,8 @@ export default function Header({ isAdmin = false, resineSubcats = [] }: HeaderPr
           >
             {/* En-tête du panneau */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--bordure)' }}>
-              <Link href="/home" onClick={closeMenu} style={{ textDecoration: 'none' }}>
-                <Image src="/logo.png" alt="Heaven's By Elena" width={80} height={80} style={{ objectFit: 'contain', width: 'auto', height: '70px' }} />
+              <Link href="/home" onClick={closeMenu} style={{ textDecoration: 'none', display: 'block', width: 80, height: 70, position: 'relative' }}>
+                <Image src="/logo.png" alt="Heaven's By Elena" fill sizes="80px" style={{ objectFit: 'contain' }} />
               </Link>
               <button
                 onClick={closeMenu}
@@ -483,16 +494,16 @@ export default function Header({ isAdmin = false, resineSubcats = [] }: HeaderPr
               </Link>
 
               {isAdmin && (
-                <>
-                  <a href="/admin" style={{ display: 'block', padding: '12px 0', fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--texte-muted)', textDecoration: 'none' }}>
-                    Admin
-                  </a>
-                  <form action="/api/auth/logout" method="POST">
-                    <button type="submit" style={{ background: 'none', border: 'none', padding: '12px 0', fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gris)', cursor: 'pointer', textDecoration: 'underline', display: 'block' }}>
-                      Déconnexion
-                    </button>
-                  </form>
-                </>
+                <a href="/admin" onClick={closeMenu} style={{ display: 'block', padding: '12px 0', fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--texte-muted)', textDecoration: 'none' }}>
+                  Admin
+                </a>
+              )}
+              {isLoggedIn && (
+                <form action="/api/auth/logout" method="POST">
+                  <button type="submit" style={{ background: 'none', border: 'none', padding: '12px 0', fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gris)', cursor: 'pointer', textDecoration: 'underline', display: 'block' }}>
+                    Déconnexion
+                  </button>
+                </form>
               )}
             </nav>
           </div>

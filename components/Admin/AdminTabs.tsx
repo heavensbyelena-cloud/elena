@@ -76,9 +76,20 @@ interface AdminTabsProps {
       country?: string;
       phone?: string;
     } | null;
+    shipping_method?: 'home_delivery' | 'point_relay' | null;
+    pickup_point?: {
+      id?: string;
+      name?: string;
+      address?: string;
+      city?: string;
+      zipCode?: string;
+    } | null;
     status: string;
     created_at: string;
     items: unknown[];
+    discount_amount?: number | null;
+    promo_code_id?: string | null;
+    promo_codes?: { code: string } | null;
   }>;
   reviews: Array<{
     id: string;
@@ -160,9 +171,27 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
         <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 400, letterSpacing: '0.15em' }}>
           Administration
         </h1>
-        <Link href="/home" style={{ fontSize: '0.72rem', color: 'var(--gris)', textDecoration: 'none', letterSpacing: '0.12em' }}>
-          ← Boutique
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <Link
+            href="/admin/promo"
+            style={{
+              fontSize: '0.72rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              color: 'var(--blanc)',
+              background: 'var(--noir)',
+              border: '1px solid var(--noir)',
+              padding: '8px 16px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Codes promo
+          </Link>
+          <Link href="/home" style={{ fontSize: '0.72rem', color: 'var(--gris)', textDecoration: 'none', letterSpacing: '0.12em' }}>
+            ← Boutique
+          </Link>
+        </div>
       </div>
 
       {/* Onglets */}
@@ -446,6 +475,7 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
                 const shipping = o.shipping_cost ?? 0;
                 const total = o.total_price ?? o.total ?? subtotal + shipping;
                 const color = ORDER_STATUS_COLORS[o.status] ?? 'var(--gris)';
+                const isRelay = o.shipping_method === 'point_relay';
                 return (
                   <div key={o.id} style={{ border: '1px solid var(--bordure)', padding: '14px 16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
@@ -456,6 +486,12 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
                       </div>
                       <span style={{ padding: '3px 8px', fontSize: '0.6rem', letterSpacing: '0.08em', textTransform: 'uppercase', color, border: `1px solid ${color}`, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '8px' }}>
                         {translateStatus(o.status)}
+                      </span>
+                    </div>
+                    {/* Badge livraison */}
+                    <div style={{ marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.62rem', padding: '2px 8px', border: `1px solid ${isRelay ? '#7a5ab5' : '#4a7ab5'}`, color: isRelay ? '#7a5ab5' : '#4a7ab5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        {isRelay ? '📦 Point Relay' : '🏠 Domicile'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '10px', color: 'var(--gris)' }}>
@@ -481,7 +517,7 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--bordure)' }}>
-                    {['Commande #', 'Client', 'Email', 'Articles', 'Sous-total', 'Livraison', 'Total', 'Statut', 'Date', 'Actions'].map((h) => (
+                    {['Commande #', 'Client', 'Email', 'Mode', 'Articles', 'Sous-total', 'Livraison', 'Total', 'Statut', 'Date', 'Actions'].map((h) => (
                       <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.68rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gris)', fontWeight: 400, whiteSpace: 'nowrap' }}>
                         {h}
                       </th>
@@ -499,6 +535,13 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
                         <td style={{ padding: '12px 14px', fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--gris)' }}>{o.id ? String(o.id).slice(0, 8).toUpperCase() : 'N/A'}</td>
                         <td style={{ padding: '12px 14px' }}>{o.customer_name ?? '—'}</td>
                         <td style={{ padding: '12px 14px', color: 'var(--gris)', fontSize: '0.8rem' }}>{o.customer_email}</td>
+                        <td style={{ padding: '12px 14px' }}>
+                          {o.shipping_method === 'point_relay' ? (
+                            <span style={{ fontSize: '0.62rem', padding: '2px 8px', border: '1px solid #7a5ab5', color: '#7a5ab5', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>📦 Point Relay</span>
+                          ) : (
+                            <span style={{ fontSize: '0.62rem', padding: '2px 8px', border: '1px solid #4a7ab5', color: '#4a7ab5', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>🏠 Domicile</span>
+                          )}
+                        </td>
                         <td style={{ padding: '12px 14px', textAlign: 'center', color: 'var(--gris)' }}>{Array.isArray(o.items) ? o.items.length : 0}</td>
                         <td style={{ padding: '12px 14px', fontFamily: "'Cormorant Garamond', serif" }}>{formatPrice(subtotal)}</td>
                         <td style={{ padding: '12px 14px', fontFamily: "'Cormorant Garamond', serif" }}>{formatPrice(shipping)}</td>
@@ -535,9 +578,15 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
             const subtotal = order.subtotal ?? 0;
             const shipping = order.shipping_cost ?? 0;
             const total = order.total_price ?? order.total ?? subtotal + shipping;
+            const discountStored = Number(order.discount_amount ?? 0);
+            const promoCode = order.promo_codes?.code ?? null;
+            const inferredDiscount = Math.max(0, subtotal + shipping - total);
+            const discountAmount = discountStored > 0.01 ? discountStored : (inferredDiscount > 0.01 ? inferredDiscount : 0);
             const statusLabel = translateStatus(order.status);
             const sc = ORDER_STATUS_COLORS[order.status] ?? 'var(--gris)';
             const addr = order.shipping_address ?? {};
+            const isRelay = order.shipping_method === 'point_relay';
+            const relay = order.pickup_point ?? {};
 
             return (
               <div onClick={() => setSelectedOrderId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: isMobile ? '0' : '20px' }}>
@@ -567,17 +616,43 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
                   {/* Adresse + Montants */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.3fr) minmax(0,1fr)', gap: 0, borderBottom: '1px solid var(--bordure)' }}>
                     <div style={{ padding: isMobile ? '16px' : '24px 28px', borderRight: isMobile ? 'none' : '1px solid var(--bordure)', borderBottom: isMobile ? '1px solid var(--bordure)' : 'none' }}>
-                      <p style={{ fontSize: '0.58rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--texte-muted)', marginBottom: '10px' }}>Adresse de livraison</p>
-                      {(addr.first_name || addr.last_name || addr.address) ? (
-                        <div style={{ fontSize: '0.86rem', color: 'var(--texte)', lineHeight: 1.8 }}>
-                          {(addr.first_name || addr.last_name) && <p style={{ fontWeight: 500 }}>{addr.first_name} {addr.last_name}</p>}
-                          {addr.address && <p style={{ color: 'var(--texte-muted)' }}>{addr.address}</p>}
-                          {(addr.postal_code || addr.city) && <p style={{ color: 'var(--texte-muted)' }}>{addr.postal_code} {addr.city}</p>}
-                          {addr.country && <p style={{ color: 'var(--texte-muted)' }}>{addr.country}</p>}
-                          {addr.phone && <p style={{ color: 'var(--texte-muted)', fontSize: '0.8rem', marginTop: '4px' }}>Tél. : {addr.phone}</p>}
-                        </div>
+                      {/* Badge mode de livraison */}
+                      <div style={{ marginBottom: '12px' }}>
+                        <span style={{ fontSize: '0.62rem', padding: '3px 10px', border: `1px solid ${isRelay ? '#7a5ab5' : '#4a7ab5'}`, color: isRelay ? '#7a5ab5' : '#4a7ab5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                          {isRelay ? '📦 Point Mondial Relay' : '🏠 Livraison à domicile'}
+                        </span>
+                      </div>
+
+                      {isRelay ? (
+                        <>
+                          <p style={{ fontSize: '0.58rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--texte-muted)', marginBottom: '10px' }}>Point Relay sélectionné</p>
+                          {relay.name ? (
+                            <div style={{ fontSize: '0.86rem', color: 'var(--texte)', lineHeight: 1.8 }}>
+                              <p style={{ fontWeight: 600 }}>{relay.name}</p>
+                              {relay.id && <p style={{ fontSize: '0.75rem', color: 'var(--texte-muted)' }}>Code : {relay.id}</p>}
+                              {relay.address && <p style={{ color: 'var(--texte-muted)' }}>{relay.address}</p>}
+                              {(relay.zipCode || relay.city) && <p style={{ color: 'var(--texte-muted)' }}>{relay.zipCode} {relay.city}</p>}
+                              {addr.phone && <p style={{ color: 'var(--texte-muted)', fontSize: '0.8rem', marginTop: '4px' }}>Tél. client : {addr.phone}</p>}
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: '0.83rem', color: 'var(--texte-muted)' }}>Informations du point non disponibles.</p>
+                          )}
+                        </>
                       ) : (
-                        <p style={{ fontSize: '0.83rem', color: 'var(--texte-muted)' }}>Aucune adresse renseignée.</p>
+                        <>
+                          <p style={{ fontSize: '0.58rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--texte-muted)', marginBottom: '10px' }}>Adresse de livraison</p>
+                          {(addr.first_name || addr.last_name || addr.address) ? (
+                            <div style={{ fontSize: '0.86rem', color: 'var(--texte)', lineHeight: 1.8 }}>
+                              {(addr.first_name || addr.last_name) && <p style={{ fontWeight: 500 }}>{addr.first_name} {addr.last_name}</p>}
+                              {addr.address && <p style={{ color: 'var(--texte-muted)' }}>{addr.address}</p>}
+                              {(addr.postal_code || addr.city) && <p style={{ color: 'var(--texte-muted)' }}>{addr.postal_code} {addr.city}</p>}
+                              {addr.country && <p style={{ color: 'var(--texte-muted)' }}>{addr.country}</p>}
+                              {addr.phone && <p style={{ color: 'var(--texte-muted)', fontSize: '0.8rem', marginTop: '4px' }}>Tél. : {addr.phone}</p>}
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: '0.83rem', color: 'var(--texte-muted)' }}>Aucune adresse renseignée.</p>
+                          )}
+                        </>
                       )}
                     </div>
                     <div style={{ padding: isMobile ? '16px' : '24px 28px' }}>
@@ -589,9 +664,33 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem', color: 'var(--texte-muted)' }}>
                           <span>Livraison</span><span style={{ color: 'var(--texte)' }}>{shipping === 0 ? 'Offerte' : formatPrice(shipping)}</span>
                         </div>
-                        <div style={{ borderTop: '1px solid var(--bordure)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        {discountAmount > 0.01 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '10px', fontSize: '0.86rem', color: 'var(--texte-muted)' }}>
+                            <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+                              {promoCode ? (
+                                <>
+                                  Code promo
+                                  <span style={{ fontSize: '0.58rem', padding: '2px 8px', border: '1px solid rgba(143,213,209,0.45)', color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                    {promoCode}
+                                  </span>
+                                </>
+                              ) : (
+                                'Réduction'
+                              )}
+                            </span>
+                            <span style={{ color: '#7ab87a', flexShrink: 0 }}>−{formatPrice(discountAmount)}</span>
+                          </div>
+                        )}
+                        <div style={{ borderTop: '1px solid var(--bordure)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '16px' }}>
                           <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--texte-muted)' }}>Total</span>
-                          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.25rem', color: 'var(--accent)' }}>{formatPrice(total)}</span>
+                          <div style={{ textAlign: 'right' }}>
+                            {discountAmount > 0.01 && (
+                              <p style={{ fontSize: '0.78rem', color: 'var(--texte-muted)', textDecoration: 'line-through', marginBottom: '2px' }}>
+                                {formatPrice(subtotal + shipping)}
+                              </p>
+                            )}
+                            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.25rem', color: 'var(--accent)' }}>{formatPrice(total)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>

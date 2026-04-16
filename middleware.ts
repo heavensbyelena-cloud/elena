@@ -1,74 +1,83 @@
-/**
- * Middleware — Protection des routes selon le type d'accès.
- * - Public : /shop, /home, /product, /cart, /checkout, /orders, /legal
- * - Admin seulement : /admin
- * - Utilisateur connecté (user ou admin) : /account
- */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifySessionToken, COOKIE_NAME } from '@/lib/jwt';
+import { createServerClient } from '@supabase/ssr';
 
-/** Routes publiques : accessibles sans connexion */
 const PUBLIC_PREFIXES = ['/shop', '/home', '/product', '/cart', '/checkout', '/orders', '/legal'];
-
-/** Routes admin : réservées aux admins */
 const ADMIN_PREFIX = '/admin';
-
-/** Routes compte : nécessitent une session (user ou admin) */
 const ACCOUNT_PREFIX = '/account';
+/** Connexion / inscription : accessibles sans être connecté (sinon boucle de redirections). */
+const ACCOUNT_PUBLIC_PATHS = new Set<string>([`${ACCOUNT_PREFIX}/login`, `${ACCOUNT_PREFIX}/register`]);
 
-function isPublicPath(pathname: string): boolean {
+function isPublicPath(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
-
-function isAdminPath(pathname: string): boolean {
+function isAdminPath(pathname: string) {
   return pathname === ADMIN_PREFIX || pathname.startsWith(ADMIN_PREFIX + '/');
 }
-
-function isAccountPath(pathname: string): boolean {
+function isAccountPath(pathname: string) {
   return pathname === ACCOUNT_PREFIX || pathname.startsWith(ACCOUNT_PREFIX + '/');
+}
+function isPublicAccountPath(pathname: string) {
+  return ACCOUNT_PUBLIC_PATHS.has(pathname);
 }
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
-  }
+  let response = NextResponse.next({ request });
 
-  const sessionCookie = request.cookies.get(COOKIE_NAME);
-  const token = sessionCookie?.value ?? null;
-
-  let payload: Awaited<ReturnType<typeof verifySessionToken>> = null;
-  if (token) {
-    try {
-      payload = await verifySessionToken(token);
-    } catch {
-      // JWT invalide ou expiré
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options as Record<string, unknown>)
+          );
+        },
+      },
     }
-  }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (isPublicPath(pathname)) return response;
 
   if (isAdminPath(pathname)) {
-    if (!token || !payload || payload.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url));
+    if (!user) {
+      return NextResponse.redirect(new URL('/admin-login', request.url));
     }
-    return NextResponse.next();
+    return response;
   }
 
   if (isAccountPath(pathname)) {
-    if (!token || !payload) {
-      return NextResponse.redirect(new URL('/', request.url));
+    if (isPublicAccountPath(pathname)) {
+      return response;
     }
-    return NextResponse.next();
+    if (!user) {
+      return NextResponse.redirect(
+        new URL('/account/login?redirect=' + encodeURIComponent(pathname), request.url)
+      );
+    }
+    return response;
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
   matcher: [
     '/shop/:path*',
     '/home/:path*',
+    '/admin',
     '/admin/:path*',
     '/account/:path*',
     '/cart/:path*',

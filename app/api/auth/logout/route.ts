@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { COOKIE_NAME } from '@/lib/jwt';
+import { createServerClient } from '@supabase/ssr';
+
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await supabase.auth.signOut();
-
     const response = NextResponse.redirect(new URL('/', request.url));
-    response.cookies.set(COOKIE_NAME, '', { maxAge: 0, path: '/' });
+    const supabase = createServerClient(url, anonKey, {
+      cookies: {
+        getAll() { return request.cookies.getAll(); },
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options as Record<string, unknown>);
+          });
+        },
+      },
+    });
+    await supabase.auth.signOut();
     return response;
   } catch {
-    const response = NextResponse.redirect(new URL('/', request.url));
-    response.cookies.set(COOKIE_NAME, '', { maxAge: 0, path: '/' });
-    return response;
+    return NextResponse.redirect(new URL('/', request.url));
   }
 }

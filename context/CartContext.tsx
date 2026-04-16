@@ -1,13 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { CartItem as CartItemType } from '@/types';
+import type { AppliedPromo, CartItem as CartItemType } from '@/types';
 
 /* ── Types ───────────────────────────────────────────── */
 interface CartContextValue {
   items: CartItemType[];
   count: number;
   total: number;
+  appliedPromo: AppliedPromo | null;
+  setAppliedPromo: (promo: AppliedPromo | null) => void;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -24,6 +26,7 @@ interface CartContextValue {
 /* ── Context ─────────────────────────────────────────── */
 const CartContext = createContext<CartContextValue | null>(null);
 const CART_KEY = 'heavens_cart';
+const PROMO_KEY = 'heavens_promo';
 const AUTH_ME_ENDPOINT = '/api/auth/me';
 const CART_ADD_ENDPOINT = '/api/cart/add';
 const CART_REMOVE_ENDPOINT = '/api/cart/remove';
@@ -33,6 +36,7 @@ const CART_SYNC_ENDPOINT = '/api/cart/sync';
 /* ── Provider ────────────────────────────────────────── */
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItemType[]>([]);
+  const [appliedPromo, setAppliedPromoState] = useState<AppliedPromo | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -49,7 +53,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(CART_KEY);
       if (raw) setItems(JSON.parse(raw));
     } catch { /* panier corrompu → on repart de zéro */ }
+    try {
+      const promoRaw = localStorage.getItem(PROMO_KEY);
+      if (promoRaw) setAppliedPromoState(JSON.parse(promoRaw));
+    } catch { /* promo corrompue */ }
   }, [isClient]);
+
+  const setAppliedPromo = useCallback((promo: AppliedPromo | null) => {
+    setAppliedPromoState(promo);
+    try {
+      if (promo) localStorage.setItem(PROMO_KEY, JSON.stringify(promo));
+      else localStorage.removeItem(PROMO_KEY);
+    } catch { /* ignore */ }
+  }, []);
 
   // Détecter si l'utilisateur est connecté et, si oui, fusionner le panier local → Supabase
   useEffect(() => {
@@ -211,6 +227,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = useCallback(() => {
     setItems([]);
+    setAppliedPromo(null);
     try {
       localStorage.removeItem(CART_KEY);
     } catch {
@@ -223,7 +240,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
       }).catch(() => {});
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, setAppliedPromo]);
 
   // Aliases pour compatibilité avec l'existant
   const addItem = useCallback(
@@ -241,6 +258,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       items,
       count,
       total,
+      appliedPromo,
+      setAppliedPromo,
       isOpen,
       openCart,
       closeCart,

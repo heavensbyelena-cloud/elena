@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdminApi } from '@/lib/auth-api';
+import { requireAdminApi } from '@/lib/auth';
 
 /**
  * POST /api/products/bulk
@@ -13,7 +13,7 @@ import { requireAdminApi } from '@/lib/auth-api';
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAdminApi(request);
+    const auth = await requireAdminApi();
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();

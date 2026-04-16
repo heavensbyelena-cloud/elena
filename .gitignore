@@ -35,3 +35,6 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# Supabase CLI local
+supabase/.temp/

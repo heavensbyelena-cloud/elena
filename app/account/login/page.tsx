@@ -42,11 +42,14 @@ export default function LoginPage() {
 
   return (
     <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', background: 'var(--fond-casse)' }}>
-      <div style={{ width: '100%', maxWidth: '440px', background: 'var(--blanc)', border: '1px solid var(--bordure)', padding: '48px 40px' }}>
+      <div
+        className="surface-light"
+        style={{ width: '100%', maxWidth: '440px', background: 'var(--blanc)', border: '1px solid var(--bordure)', padding: '48px 40px' }}
+      >
         <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', fontWeight: 400, letterSpacing: '0.15em', textAlign: 'center', marginBottom: '8px' }}>
           Connexion
         </h1>
-        <p style={{ textAlign: 'center', color: 'var(--gris)', fontSize: '0.85rem', marginBottom: '36px' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.85rem', marginBottom: '36px' }}>
           Accédez à votre espace client
         </p>
 
@@ -60,7 +63,7 @@ export default function LoginPage() {
             <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" required className="form-input" />
           </div>
           <div style={{ textAlign: 'right', marginBottom: '28px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--gris)', cursor: 'pointer', textDecoration: 'underline' }}>
+            <span className="link-subtle" style={{ fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}>
               Mot de passe oublié ?
             </span>
           </div>
@@ -68,13 +71,13 @@ export default function LoginPage() {
           {error && <p style={{ color: '#c05050', fontSize: '0.85rem', marginBottom: '16px', textAlign: 'center' }}>{error}</p>}
 
           <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', padding: '14px', opacity: loading ? 0.7 : 1 }}>
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? 'Connexion…' : 'Se connecter'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '0.85rem', color: 'var(--gris)' }}>
+        <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '0.85rem' }}>
           Pas encore de compte ?{' '}
-          <Link href="/account/register" style={{ color: 'var(--noir)', textDecoration: 'underline' }}>
+          <Link href="/account/register" style={{ color: 'var(--noir)', textDecoration: 'underline', fontWeight: 500 }}>
             Créer un compte
           </Link>
         </p>

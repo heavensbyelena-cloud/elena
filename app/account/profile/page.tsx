@@ -301,7 +301,7 @@ export default function ProfilePage() {
             className="btn-primary"
             style={{ padding: '14px 32px', opacity: savingProfile || loadingProfile ? 0.7 : 1 }}
           >
-            {savingProfile ? 'Enregistrement...' : 'Enregistrer le profil'}
+            {savingProfile ? 'Enregistrement…' : 'Enregistrer le profil'}
           </button>
         </fieldset>
       </form>
@@ -362,7 +362,7 @@ export default function ProfilePage() {
             className="btn-secondary"
             style={{ padding: '10px 24px', fontSize: '0.8rem' }}
           >
-            {changingPassword ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
+            {changingPassword ? 'Mise à jour…' : 'Mettre à jour le mot de passe'}
           </button>
         </form>
       </div>

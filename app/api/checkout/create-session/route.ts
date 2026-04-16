@@ -6,6 +6,87 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+async function validatePromoForCheckout(
+  admin: AdminClient,
+  promoId: string,
+  cartSubtotal: number,
+  claimedDiscount: number,
+  userId: string | null
+): Promise<{ ok: true; discount: number } | { ok: false; message: string }> {
+  if (!userId) {
+    return { ok: false, message: 'Connexion requise pour utiliser un code promo' };
+  }
+
+  const { data: promoRow, error } = await (admin as any)
+    .from('promo_codes')
+    .select('*')
+    .eq('id', promoId)
+    .eq('active', true)
+    .maybeSingle();
+
+  if (error || !promoRow) {
+    return { ok: false, message: 'Code promo invalide' };
+  }
+
+  const promo = promoRow as {
+    id: string;
+    value: number;
+    min_order: number | null;
+    max_uses: number | null;
+    uses_count: number;
+    is_personal: boolean;
+    expires_at: string | null;
+  };
+
+  if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+    return { ok: false, message: 'Code promo expiré' };
+  }
+
+  if (promo.min_order != null && cartSubtotal < promo.min_order) {
+    return { ok: false, message: 'Montant minimum non atteint' };
+  }
+
+  if (promo.max_uses != null && promo.uses_count >= promo.max_uses) {
+    return { ok: false, message: 'Code promo invalide' };
+  }
+
+  const expectedDiscount =
+    Math.round((cartSubtotal * Number(promo.value)) / 100 * 100) / 100;
+
+  if (Math.abs(expectedDiscount - claimedDiscount) > 0.02) {
+    return { ok: false, message: 'Montant de remise invalide' };
+  }
+
+  if (promo.is_personal) {
+    const { data: assignment } = await (admin as any)
+      .from('promo_code_users')
+      .select('*')
+      .eq('promo_code_id', promo.id)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!assignment) return { ok: false, message: 'Code non autorisé pour ce compte' };
+
+    const a = assignment as { max_uses: number; uses_count: number };
+    if (a.uses_count >= a.max_uses) {
+      return { ok: false, message: 'Code non autorisé pour ce compte' };
+    }
+  } else {
+    const { data: usage } = await (admin as any)
+      .from('promo_code_usages')
+      .select('id')
+      .eq('promo_code_id', promo.id)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (usage) return { ok: false, message: 'Code déjà utilisé' };
+  }
+
+  return { ok: true, discount: expectedDiscount };
+}
+
 export async function POST(request: NextRequest) {
   console.log('[create-session] STRIPE_SECRET_KEY:', stripeSecretKey ? 'défini' : 'manquant');
   if (!stripeSecretKey) {
@@ -22,10 +103,19 @@ export async function POST(request: NextRequest) {
       customer_email,
       customer_name,
       shipping_address,
+      shipping_method,
+      pickup_point,
       subtotal,
       shipping_cost,
       total,
+      promo_id,
+      discount_amount,
     } = body;
+
+    const discountRaw = Number(discount_amount ?? 0);
+    const discount = Number.isFinite(discountRaw) ? Math.round(discountRaw * 100) / 100 : 0;
+    const promoId =
+      typeof promo_id === 'string' && promo_id.length > 0 ? promo_id : null;
 
     console.log('[create-session] Données reçues:', {
       itemsCount: items?.length,
@@ -34,20 +124,96 @@ export async function POST(request: NextRequest) {
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
     });
 
-    if (!items?.length || !customer_email || !shipping_address) {
+    if (!items?.length || !customer_email) {
       return NextResponse.json(
-        { error: 'Données manquantes (items, email, adresse)' },
+        { error: 'Données manquantes (items, email)' },
         { status: 400 }
       );
     }
 
-    // Validation des montants côté serveur (sécurité)
-    const computedSubtotal = items.reduce(
-      (sum: number, i: { price: number; qty: number }) => sum + i.price * i.qty,
+    const method = shipping_method ?? 'home_delivery';
+
+    if (method === 'home_delivery' && !shipping_address) {
+      return NextResponse.json(
+        { error: 'Adresse de livraison manquante' },
+        { status: 400 }
+      );
+    }
+
+    if (method === 'point_relay' && !pickup_point?.id) {
+      return NextResponse.json(
+        { error: 'Point Mondial Relay non sélectionné' },
+        { status: 400 }
+      );
+    }
+
+    if (promoId && discount <= 0) {
+      return NextResponse.json({ error: 'Remise code promo invalide' }, { status: 400 });
+    }
+    if (!promoId && discount > 0) {
+      return NextResponse.json({ error: 'Montant total invalide' }, { status: 400 });
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const admin = createAdminClient();
+
+    // Chargement des prix réels depuis la base de données (sécurité anti-manipulation)
+    const productIds: string[] = items.map((i: { id: string }) => i.id).filter(Boolean);
+    if (productIds.length === 0) {
+      return NextResponse.json({ error: 'Produits invalides' }, { status: 400 });
+    }
+
+    const { data: dbProducts, error: productsError } = await (admin as any)
+      .from('products')
+      .select('id, name, price, image_url, is_active, stock')
+      .in('id', productIds);
+
+    if (productsError || !dbProducts?.length) {
+      return NextResponse.json({ error: 'Produits introuvables' }, { status: 400 });
+    }
+
+    const productMap = new Map<string, { name: string; price: number; image_url: string; is_active: boolean; stock: number | null }>(
+      dbProducts.map((p: { id: string; name: string; price: number; image_url: string; is_active: boolean; stock: number | null }) => [p.id, p])
+    );
+
+    // Vérifier que tous les produits existent et sont actifs
+    for (const item of items as Array<{ id: string; qty: number }>) {
+      const dbProduct = productMap.get(item.id);
+      if (!dbProduct) {
+        return NextResponse.json({ error: `Produit introuvable : ${item.id}` }, { status: 400 });
+      }
+      if (!dbProduct.is_active) {
+        return NextResponse.json({ error: `Produit non disponible : ${dbProduct.name}` }, { status: 400 });
+      }
+      if (dbProduct.stock !== null && dbProduct.stock < item.qty) {
+        return NextResponse.json({ error: `Stock insuffisant pour : ${dbProduct.name}` }, { status: 400 });
+      }
+    }
+
+    // Calcul du sous-total avec les prix de la base de données
+    const computedSubtotal = (items as Array<{ id: string; qty: number }>).reduce(
+      (sum, i) => sum + (productMap.get(i.id)?.price ?? 0) * i.qty,
       0
     );
-    const computedTotal = Math.round((computedSubtotal + (shipping_cost ?? 0)) * 100) / 100;
+    const ship = Number(shipping_cost ?? 0);
+    const computedTotal =
+      Math.round((computedSubtotal + ship - discount) * 100) / 100;
     const requestedTotal = Math.round((total ?? 0) * 100) / 100;
+
+    if (promoId) {
+      const v = await validatePromoForCheckout(
+        admin,
+        promoId,
+        computedSubtotal,
+        discount,
+        user?.id ?? null
+      );
+      if (!v.ok) {
+        return NextResponse.json({ error: v.message }, { status: 400 });
+      }
+    }
+
     if (Math.abs(computedTotal - requestedTotal) > 0.01) {
       return NextResponse.json(
         { error: 'Montant total invalide' },
@@ -55,20 +221,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+    } as unknown as ConstructorParameters<typeof Stripe>[1]);
 
-    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
-      (item: { name: string; price: number; qty: number; image_url?: string }) => ({
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: item.name,
-            images: item.image_url ? [item.image_url] : undefined,
+    // line_items Stripe construits avec les prix de la base de données (pas ceux du client)
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = (items as Array<{ id: string; qty: number }>).map(
+      (item) => {
+        const dbProduct = productMap.get(item.id)!;
+        return {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: dbProduct.name,
+              images: dbProduct.image_url ? [dbProduct.image_url] : undefined,
+            },
+            unit_amount: Math.round(dbProduct.price * 100),
           },
-          unit_amount: Math.round(item.price * 100),
-        },
-        quantity: item.qty,
-      })
+          quantity: item.qty,
+        };
+      }
     );
 
     if (shipping_cost > 0) {
@@ -84,14 +256,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    /** Stripe exige unit_amount ≥ 0 ; un coupon ponctuel applique la remise sur la session. */
+    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
+    if (promoId && discount > 0) {
+      const coupon = await stripe.coupons.create({
+        amount_off: Math.round(discount * 100),
+        currency: 'eur',
+        duration: 'once',
+        name: 'Code promo',
+      });
+      discounts = [{ coupon: coupon.id }];
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       line_items,
+      ...(discounts && discounts.length > 0 ? { discounts } : {}),
       customer_email: customer_email.trim(),
       metadata: {
-        customer_name: (customer_name || '').slice(0, 500),
+        customer_name:    (customer_name || '').slice(0, 500),
         shipping_address: JSON.stringify(shipping_address).slice(0, 500),
+        shipping_method:  method,
+        pickup_point:     pickup_point ? JSON.stringify(pickup_point).slice(0, 500) : '',
+        promo_id:         promoId ?? '',
+        discount_amount:  String(discount),
       },
       success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/checkout`,
@@ -107,33 +296,35 @@ export async function POST(request: NextRequest) {
 
     console.log('[create-session] Stripe Session créée:', { sessionId: session.id, url: session.url ? 'ok' : 'manquant' });
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const admin = createAdminClient();
-
-    const orderItems = items.map(
-      (i: { id: string; name: string; price: number; qty: number; image_url?: string }) => ({
+    // Commande enregistrée avec les prix de la base de données
+    const orderItems = (items as Array<{ id: string; qty: number }>).map((i) => {
+      const dbProduct = productMap.get(i.id)!;
+      return {
         product_id: i.id,
-        product_name: i.name,
-        price: i.price,
+        product_name: dbProduct.name,
+        price: dbProduct.price,
         qty: i.qty,
-        image_url: i.image_url,
-      })
-    );
+        image_url: dbProduct.image_url,
+      };
+    });
 
-    // user_id en BIGINT en base : on n'envoie pas l'UUID. Passer à une colonne UUID pour lier l'utilisateur.
-    await admin.from('orders').insert([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin as any).from('orders').insert([
       {
-        user_id: null,
-        customer_email: customer_email.trim(),
-        customer_name: customer_name ?? null,
-        items: orderItems,
+        user_id:         user?.id ?? null,
+        customer_email:  customer_email.trim(),
+        customer_name:   customer_name ?? null,
+        items:           orderItems,
         shipping_address,
-        subtotal: subtotal ?? computedSubtotal,
-        shipping_cost: shipping_cost ?? 0,
-        total_price: requestedTotal,
-        status: 'pending',
-        payment_id: session.id,
+        shipping_method: method,
+        pickup_point:    method === 'point_relay' ? (pickup_point ?? null) : null,
+        subtotal:        subtotal ?? computedSubtotal,
+        shipping_cost:   shipping_cost ?? 0,
+        total_price:     requestedTotal,
+        promo_code_id:   promoId,
+        discount_amount: discount,
+        status:          'pending',
+        payment_id:      session.id,
       },
     ]);
 

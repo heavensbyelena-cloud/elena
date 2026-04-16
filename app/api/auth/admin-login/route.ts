@@ -6,7 +6,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase-server';
-import { createSessionToken, COOKIE_NAME } from '@/lib/jwt';
 import { checkAuthRateLimit } from '@/lib/rate-limit';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -85,21 +84,6 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-
-    const token = await createSessionToken({
-      sub: user.id,
-      email: user.email ?? email,
-      role: 'admin',
-    });
-
-    const isProd = process.env.NODE_ENV === 'production';
-    response.cookies.set(COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60,
-      path: '/',
-    });
 
     return response;
   } catch {

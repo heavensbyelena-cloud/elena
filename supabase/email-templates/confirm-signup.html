@@ -1,0 +1,78 @@
+<!--
+  Modèle « Confirm signup » — à coller dans Supabase :
+  Authentication → Email Templates → Confirm signup (corps HTML).
+
+  Sujet suggéré : Confirmez votre compte — Heaven's By Elena
+
+  Image : déployer /public/email-logo.png avec le site pour que
+  {{ .SiteURL }}/email-logo.png fonctionne (voir URL Configuration).
+-->
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confirmer l’inscription</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#060606;color:#E8E4DE;font-family:Georgia,'Times New Roman',serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#060606;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" style="max-width:560px;background-color:#0E0D0B;border:1px solid #1A2528;border-radius:12px;overflow:hidden;">
+            <tr>
+              <td align="center" style="padding:28px 24px 8px 24px;">
+                <img src="{{ .SiteURL }}/email-logo.png" alt="Heaven's By Elena" width="280" style="display:block;max-width:100%;height:auto;border:0;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 8px 32px;font-size:22px;line-height:1.35;text-align:center;color:#E8E4DE;font-weight:400;">
+                Bienvenue
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 24px 32px;font-size:15px;line-height:1.6;text-align:center;color:#9A9288;font-family:Arial,Helvetica,sans-serif;">
+                Merci de confirmer votre adresse e-mail pour activer votre compte.
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:0 24px 28px 24px;">
+                <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 36px;background-color:#8FD5D1;color:#060606;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;border-radius:8px;">
+                  Confirmer mon e-mail
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 32px 28px 32px;border-top:1px solid #1A2528;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:24px;">
+                  <tr>
+                    <td align="center" style="font-size:13px;line-height:1.5;color:#9A9288;font-family:Arial,Helvetica,sans-serif;">
+                      Votre code de bienvenue
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-top:10px;">
+                      <span style="display:inline-block;padding:12px 28px;background-color:#12110E;border:1px dashed #8FD5D1;border-radius:8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.12em;color:#8FD5D1;">
+                        bienvenue10
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-top:12px;font-size:12px;line-height:1.5;color:#6B6459;font-family:Arial,Helvetica,sans-serif;">
+                      À saisir au panier lors de votre première commande.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 32px 32px 32px;font-size:12px;line-height:1.55;color:#6B6459;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+                Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :<br />
+                <a href="{{ .ConfirmationURL }}" style="color:#8FD5D1;word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

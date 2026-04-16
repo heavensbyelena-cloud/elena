@@ -51,7 +51,7 @@ export default function ReviewForm({ productId, onSuccess }: Props) {
           Laisser un avis
         </h3>
         <p style={{ fontSize: '0.8rem', color: 'var(--texte-muted)', letterSpacing: '0.05em' }}>
-          Votre expérience aide les autres clientes à choisir.
+          Votre expérience aide les autres clients à choisir.
         </p>
       </div>
 

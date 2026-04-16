@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
 import '@/styles/globals.css';
 import { CartProvider } from '@/context/CartContext';
 import { ToastProvider } from '@/context/ToastContext';
 import ConditionalLayout from '@/components/Layout/ConditionalLayout';
-import { verifySessionToken, COOKIE_NAME } from '@/lib/jwt';
+import { getAuthAndProfile } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 
 export const metadata: Metadata = {
@@ -13,15 +12,15 @@ export const metadata: Metadata = {
     template: "%s | Heaven's By Elena",
   },
   description:
-    "Bijoux faits main portés avec âme. Créations artisanales en gold filled & argent sterling par Elena.",
-  keywords: ['bijoux', 'faits main', 'gold filled', 'argent sterling', 'artisanal', 'Elena'],
+    "Bijoux faits main portés avec âme. Créations artisanales en acier inoxydable par Elena.",
+  keywords: ['bijoux', 'faits main', 'acier inoxydable', 'artisanal', 'Elena'],
   authors: [{ name: 'Elena' }],
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
     siteName: "Heaven's By Elena",
     title: "Heaven's By Elena — Bijoux faits main",
-    description: "Bijoux faits main, portés avec âme. Gold filled & Argent sterling.",
+    description: "Bijoux faits main, portés avec âme. Acier inoxydable.",
   },
   robots: { index: true, follow: true },
 };
@@ -32,18 +31,16 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let isLoggedIn = false;
   let isAdmin = false;
   let resineSubcats: string[] = [];
 
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-    if (token) {
-      const payload = await verifySessionToken(token);
-      isAdmin = payload?.role === 'admin';
-    }
+    const { hasSession, user } = await getAuthAndProfile();
+    isLoggedIn = hasSession;
+    isAdmin = user?.role === 'admin' || user?.is_admin === true;
   } catch {
-    // pas de session ou JWT invalide → pas admin
+    // pas de session / profil
   }
 
   try {
@@ -74,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ToastProvider>
         <CartProvider>
-          <ConditionalLayout isAdmin={isAdmin} resineSubcats={resineSubcats}>
+          <ConditionalLayout isLoggedIn={isLoggedIn} isAdmin={isAdmin} resineSubcats={resineSubcats}>
             {children}
           </ConditionalLayout>
         </CartProvider>

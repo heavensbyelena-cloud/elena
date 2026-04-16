@@ -251,14 +251,14 @@ export default function AdminNewProductPage() {
 
         <div style={{ marginBottom: '28px' }}>
           <label className="form-label">Description</label>
-          <textarea value={form.description} onChange={e => update('description', e.target.value)} placeholder="Description du produit..." rows={4} className="form-input" style={{ resize: 'vertical' }} />
+          <textarea value={form.description} onChange={e => update('description', e.target.value)} placeholder="Description du produit…" rows={4} className="form-input" style={{ resize: 'vertical' }} />
         </div>
 
         {error && <p style={{ color: '#c05050', fontSize: '0.85rem', marginBottom: '16px' }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: '16px' }}>
           <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '14px 32px', opacity: loading ? 0.7 : 1 }}>
-            {loading ? 'Création...' : 'Créer le produit'}
+            {loading ? 'Création…' : 'Créer le produit'}
           </button>
           <Link href="/admin" className="btn-secondary" style={{ padding: '14px 24px' }}>Annuler</Link>
         </div>

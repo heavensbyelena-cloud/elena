@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CATEGORIES } from '@/lib/categories';
 
-export default function Footer() {
+interface FooterProps {
+  isAdmin?: boolean;
+}
+
+export default function Footer({ isAdmin = false }: FooterProps) {
   const [email, setEmail] = useState('');
 
   function handleNewsletter(e: React.FormEvent) {
@@ -36,7 +40,7 @@ export default function Footer() {
             </span>
           </Link>
           <p style={{ fontSize: '0.85rem', color: 'var(--texte-muted)', maxWidth: '300px', marginTop: '20px', lineHeight: 1.7 }}>
-            Bijoux faits main avec âme. Gold filled & Argent sterling.
+            Bijoux faits main avec âme. Acier inoxydable.
           </p>
 
           {/* Newsletter */}
@@ -123,8 +127,44 @@ export default function Footer() {
         </div>
       </div>
 
-      <div style={{ borderTop: '1px solid var(--bordure)', paddingTop: '30px', textAlign: 'center', fontSize: '0.72rem', color: 'var(--texte-muted)' }}>
-        © {new Date().getFullYear()} Heaven&apos;s By Elena. Tous droits réservés.
+      <div
+        style={{
+          borderTop: '1px solid var(--bordure)',
+          paddingTop: '30px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '16px 24px',
+          fontSize: '0.72rem',
+          color: 'var(--texte-muted)',
+        }}
+      >
+        <span>© {new Date().getFullYear()} Heaven&apos;s By Elena. Tous droits réservés.</span>
+        {isAdmin && (
+          <Link
+            href="/admin"
+            style={{
+              color: 'var(--texte-muted)',
+              fontSize: '0.65rem',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              borderBottom: '1px solid transparent',
+              transition: 'color 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.borderBottomColor = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--texte-muted)';
+              e.currentTarget.style.borderBottomColor = 'transparent';
+            }}
+          >
+            Admin
+          </Link>
+        )}
       </div>
 
       <style>{`

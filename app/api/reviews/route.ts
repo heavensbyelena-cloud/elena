@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[POST /api/reviews] Exception:', err);
     return NextResponse.json(
-      { error: 'Erreur serveur', debug: err instanceof Error ? err.message : String(err) },
+      { error: 'Erreur serveur' },
       { status: 500 }
     );
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import AdminLoginModal from '@/components/ComingSoon/AdminLoginModal';
+import AdminLoginModal from '@/components/Admin/AdminLoginModal';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
     >
       <AdminLoginModal
         isOpen={true}
-        onClose={() => router.push('/')}
+        onClose={() => router.push('/home')}
       />
     </div>
   );

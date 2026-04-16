@@ -50,7 +50,7 @@ export const metadata: Metadata = {
 
 const ENGAGEMENTS = [
   { icon: '✦', title: 'Fait main en France',             sub: 'Créations artisanales' },
-  { icon: '◇', title: 'Gold filled & Argent sterling',   sub: 'Métaux nobles' },
+  { icon: '◇', title: 'Acier inoxydable',                sub: 'Qualité durable' },
   { icon: '⬡', title: 'Livraison soignée',               sub: 'Emballage luxueux' },
   { icon: '↺', title: 'Retours 14 jours',                sub: 'Satisfait ou remboursé' },
 ];
@@ -93,9 +93,9 @@ export default async function HomePage() {
       <HeroSection
         heading="Bijoux artisanaux français faits main"
         subheading="Créations uniques par Elena"
-        description="Chaque bijou est façonné à la main avec passion, en gold filled et argent sterling. Colliers, boucles d'oreille, parures et créations en résine — des pièces artisanales uniques, pensées pour durer et sublimer chaque tenue. Découvrez l'univers Heaven's By Elena, où l'élégance rencontre le savoir-faire artisanal français."
+        description="Chaque bijou est façonné à la main avec passion, en acier inoxydable. Colliers, boucles d'oreilles, parures et créations en résine — des pièces artisanales uniques, pensées pour durer et sublimer chaque tenue. Découvrez l'univers Heaven's By Elena, où l'élégance rencontre le savoir-faire artisanal français."
         imageSrc="https://placehold.co/800x1000/0E0D0B/8FD5D1?text=Heaven%27s"
-        imageAlt="Bijoux artisanaux faits main par Elena — colliers et boucles d'oreille en gold filled"
+        imageAlt="Bijoux artisanaux faits main par Elena — colliers et boucles d'oreilles en acier inoxydable"
         ctas={[
           { label: 'Découvrir la boutique', href: '/shop', variant: 'primary' },
           { label: 'Nos créations', href: '/shop', variant: 'secondary' },
@@ -134,10 +134,10 @@ export default async function HomePage() {
           <div>
             <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', fontWeight: 400, letterSpacing: '0.2em', marginBottom: '28px', color: 'var(--texte)' }}>Notre histoire</h2>
             <p style={{ fontSize: '0.95rem', color: 'var(--texte-muted)', lineHeight: 1.8, marginBottom: '16px' }}>
-              Elena crée ses bijoux à la main, avec passion et minutie. Chaque pièce est façonnée en gold filled et argent sterling, en série limitée, pour vous offrir des créations durables et élégantes.
+              Elena crée ses bijoux à la main, avec passion et minutie. Chaque pièce est façonnée en acier inoxydable, en série limitée, pour vous offrir des créations durables et élégantes.
             </p>
             <p style={{ fontSize: '0.95rem', color: 'var(--texte-muted)', lineHeight: 1.8 }}>
-              Des matériaux nobles, un savoir-faire artisanal et une attention portée à chaque détail : voilà ce qui fait l&apos;âme de Heaven&apos;s By Elena.
+              Un acier inoxydable soigné, un savoir-faire artisanal et une attention portée à chaque détail : voilà ce qui fait l&apos;âme de Heaven&apos;s By Elena.
             </p>
           </div>
         </div>

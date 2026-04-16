@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdminApi } from '@/lib/auth-api';
+import { requireAdminApi } from '@/lib/auth';
 import { uploadImage } from '@/lib/cloudinary';
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 Mo
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminApi(request);
+  const auth = await requireAdminApi();
   if (auth instanceof NextResponse) return auth;
 
   try {

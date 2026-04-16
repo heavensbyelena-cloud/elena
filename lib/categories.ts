@@ -24,12 +24,12 @@ export interface CategoryDef {
 export const CATEGORIES: CategoryDef[] = [
   {
     slug: 'boucles',
-    label: "Boucles d'oreille",
-    navLabel: "BOUCLES D'OREILLE",
+    label: "Boucles d'oreilles",
+    navLabel: "BOUCLES D'OREILLES",
     img: 'https://placehold.co/300x400/F5E6E0/8A8A8A?text=Boucles',
     seo: {
-      title: "Boucles d'oreille — Heaven's By Elena",
-      description: "Boucles d'oreille délicates et lumineuses, façonnées à la main pour sublimer chaque tenue.",
+      title: "Boucles d'oreilles — Heaven's By Elena",
+      description: "Boucles d'oreilles délicates et lumineuses, façonnées à la main pour sublimer chaque tenue.",
       ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Boucles',
     },
   },
@@ -40,19 +40,19 @@ export const CATEGORIES: CategoryDef[] = [
     img: 'https://placehold.co/300x400/F5E6E0/8A8A8A?text=Colliers',
     seo: {
       title: "Colliers — Heaven's By Elena",
-      description: 'Découvrez nos colliers faits main en gold filled et argent sterling, créés avec soin par Elena.',
+      description: 'Découvrez nos colliers faits main en acier inoxydable, créés avec soin par Elena.',
       ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Colliers',
     },
   },
   {
     slug: 'parrure',
-    label: 'Parrure',
-    navLabel: 'PARRURE',
-    img: 'https://placehold.co/300x400/F5E6E0/8A8A8A?text=Parrure',
+    label: 'Parure',
+    navLabel: 'PARURE',
+    img: 'https://placehold.co/300x400/F5E6E0/8A8A8A?text=Parure',
     seo: {
-      title: "Parrure — Heaven's By Elena",
-      description: 'Parrures complètes et harmonieuses pour des looks élégants et sophistiqués.',
-      ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Parrure',
+      title: "Parure — Heaven's By Elena",
+      description: 'Parures complètes et harmonieuses pour des looks élégants et sophistiqués.',
+      ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Parure',
     },
   },
   {
@@ -79,12 +79,12 @@ export const CATEGORIES: CategoryDef[] = [
   },
   {
     slug: 'sacs',
-    label: 'Sacs à mains',
-    navLabel: 'SACS À MAINS',
+    label: 'Sacs à main',
+    navLabel: 'SACS À MAIN',
     img: 'https://placehold.co/300x400/F5E6E0/8A8A8A?text=Sacs',
     seo: {
-      title: "Sacs à mains — Heaven's By Elena",
-      description: 'Sacs à mains élégants et intemporels, pensés pour accompagner vos journées et vos soirées.',
+      title: "Sacs à main — Heaven's By Elena",
+      description: 'Sacs à main élégants et intemporels, pensés pour accompagner vos journées et vos soirées.',
       ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Sacs',
     },
   },

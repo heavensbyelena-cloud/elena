@@ -51,7 +51,7 @@ export default function Button({
       disabled={disabled || loading}
       {...props}
     >
-      {loading ? 'Chargement...' : children}
+      {loading ? 'Chargement…' : children}
     </button>
   );
 }

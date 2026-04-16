@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
+import PromoInput from '@/components/Cart/PromoInput';
 
 function fmt(n: number) { return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'; }
 
 export default function CartPage() {
-  const { items, total, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { items, total, appliedPromo, updateQuantity, removeFromCart, clearCart } = useCart();
   const shipping = total >= 60 ? 0 : 4.9;
+  const discount = appliedPromo?.discount_amount ?? 0;
+  const grandTotal = Math.max(0, total + shipping - discount);
 
   if (items.length === 0) {
     return (
@@ -64,6 +67,9 @@ export default function CartPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '0.88rem', color: 'var(--gris)' }}>
             <span>Livraison</span><span>{shipping === 0 ? 'Offerte' : fmt(shipping)}</span>
           </div>
+          <div style={{ marginBottom: '20px' }}>
+            <PromoInput />
+          </div>
           {shipping > 0 && (
             <p style={{ fontSize: '0.75rem', color: 'var(--accent)', marginBottom: '16px' }}>
               Plus que {fmt(60 - total)} pour la livraison offerte
@@ -71,7 +77,7 @@ export default function CartPage() {
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--bordure)', paddingTop: '16px', marginBottom: '24px' }}>
             <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem' }}>Total</span>
-            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.3rem' }}>{fmt(total + shipping)}</span>
+            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.3rem' }}>{fmt(grandTotal)}</span>
           </div>
           <Link href="/checkout" className="btn-primary" style={{ display: 'block', textAlign: 'center', padding: '15px' }}>
             Passer la commande

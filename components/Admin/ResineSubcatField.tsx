@@ -93,7 +93,7 @@ export default function ResineSubcatField({ value, onChange }: Props) {
         {allSubcats.map(sub => (
           <option key={sub.slug} value={sub.slug}>{sub.label}</option>
         ))}
-        <option value="__new__">➕  Nouvelle sous-catégorie...</option>
+        <option value="__new__">➕  Nouvelle sous-catégorie…</option>
       </select>
 
       {isNew && (

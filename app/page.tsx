@@ -1,12 +1,6 @@
-import type { Metadata } from 'next';
-import ComingSoonPage from '@/components/ComingSoon/ComingSoonPage';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: "Heaven's By Elena — Bientôt ouvert",
-  description:
-    "Boutique de bijoux faits main. Créations artisanales en gold filled & argent sterling. Bientôt disponible.",
-};
-
+/** L’accueil public est la page d’accueil vitrine (`/home`). */
 export default function Page() {
-  return <ComingSoonPage />;
+  redirect('/home');
 }

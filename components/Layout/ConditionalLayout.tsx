@@ -1,6 +1,5 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartSidebar from '@/components/Cart/CartSidebar';
@@ -8,26 +7,20 @@ import Toast from '@/components/Common/Toast';
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
+  isLoggedIn: boolean;
   isAdmin: boolean;
   resineSubcats: string[];
 }
 
 /**
- * Sur / (Coming Soon) : affiche uniquement le contenu, sans Header/Footer.
- * Sur le reste du site : Header + main + Footer + CartSidebar + Toast.
+ * Header + main + Footer + CartSidebar + Toast sur toutes les pages.
  */
-export default function ConditionalLayout({ children, isAdmin, resineSubcats }: ConditionalLayoutProps) {
-  const pathname = usePathname();
-
-  if (pathname === '/') {
-    return <>{children}</>;
-  }
-
+export default function ConditionalLayout({ children, isLoggedIn, isAdmin, resineSubcats }: ConditionalLayoutProps) {
   return (
     <>
-      <Header isAdmin={isAdmin} resineSubcats={resineSubcats} />
+      <Header isLoggedIn={isLoggedIn} isAdmin={isAdmin} resineSubcats={resineSubcats} />
       <main>{children}</main>
-      <Footer />
+      <Footer isAdmin={isAdmin} />
       <CartSidebar />
       <Toast />
     </>

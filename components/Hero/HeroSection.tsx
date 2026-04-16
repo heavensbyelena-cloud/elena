@@ -122,7 +122,7 @@ export default function HeroSection({
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
               {ctas.map((cta) => (
                 <Link
-                  key={cta.href}
+                  key={`${cta.href}-${cta.label}`}
                   href={cta.href}
                   className={
                     cta.variant === 'secondary'

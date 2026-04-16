@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Modal from '@/components/Common/Modal';
 
 interface AdminLoginModalProps {
@@ -10,7 +9,6 @@ interface AdminLoginModalProps {
 }
 
 export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProps) {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,10 +36,7 @@ export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProp
         throw new Error(data.error || 'Connexion impossible');
       }
 
-      onClose();
-      await new Promise((r) => setTimeout(r, 300));
-      router.push('/shop');
-      window.location.href = '/shop';
+      window.location.href = '/admin';
     } catch (err: unknown) {
       setError(
         (err as Error).message?.includes('admin') || (err as Error).message?.includes('réservé')
@@ -123,7 +118,7 @@ export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProp
             className="btn-primary"
             style={{ width: '100%', padding: '14px', opacity: loading ? 0.7 : 1 }}
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? 'Connexion…' : 'Se connecter'}
           </button>
         </form>
       </div>

@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, COOKIE_NAME } from '@/lib/jwt';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get(COOKIE_NAME)?.value;
-    if (!token) {
-      return NextResponse.json(
-        { authenticated: false, role: null, email: null },
-        { status: 200 }
-      );
-    }
-
-    const payload = await verifySessionToken(token);
-    if (!payload) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json(
         { authenticated: false, role: null, email: null },
         { status: 200 }
@@ -22,8 +14,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         authenticated: true,
-        role: payload.role,
-        email: payload.email ?? null,
+        role: user.role ?? (user.is_admin ? 'admin' : 'user'),
+        email: user.email ?? null,
       },
       { status: 200 }
     );

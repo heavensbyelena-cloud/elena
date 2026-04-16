@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
-import { getSessionFromRequest } from '@/lib/auth-api';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSessionFromRequest(request);
-    if (!session) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
     const supabase = await createServerSupabaseClient();
     let query = supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (session.role !== 'admin') query = query.eq('user_id', session.sub);
+    if (user.role !== 'admin' && !user.is_admin) query = query.eq('user_id', user.id);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -53,9 +53,8 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient();
     const totalPrice = total ?? 0;
-    // La table orders.user_id est en BIGINT : on n'envoie pas l'UUID (Supabase Auth). Mettre la colonne en UUID en base pour lier l'utilisateur.
     const payload = {
-      user_id: null,
+      user_id: user?.id ?? null,
       customer_email,
       customer_name: customer_name ?? null,
       items,

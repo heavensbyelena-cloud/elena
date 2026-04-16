@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const db = createAdminClient();
+
     const body = await request.json().catch(() => ({}));
     const product_id = String(body.product_id ?? '').trim();
 
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    const { error } = await db
       .from('cart_items')
       .delete()
       .eq('user_id', user.id)

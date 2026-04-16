@@ -11,7 +11,7 @@ export const SEO = {
   home: {
     title: "Heaven's By Elena — Bijoux artisanaux français faits main",
     description:
-      "Découvrez les bijoux artisanaux faits main d'Elena : colliers, boucles d'oreille, créations en résine et accessoires uniques. Chaque pièce est façonnée à la main en France, en gold filled et argent sterling, pour un résultat élégant et durable.",
+      "Découvrez les bijoux artisanaux faits main d'Elena : colliers, boucles d'oreilles, créations en résine et accessoires uniques. Chaque pièce est façonnée à la main en France, en acier inoxydable, pour un résultat élégant et durable.",
     keywords: [
       'bijoux artisanaux',
       'bijoux faits main',
@@ -19,12 +19,11 @@ export const SEO = {
       'créations uniques',
       'bijoux résine',
       'accessoires résine',
-      'gold filled',
-      'argent sterling',
+      'acier inoxydable',
       'handmade jewelry',
       'bijoux artisanal France',
       'collier fait main',
-      'boucles oreilles artisanales',
+      "boucles d'oreilles artisanales",
       "Heaven's By Elena",
     ],
     ogImage: `${SITE_URL}/og-image.jpg`,
@@ -32,7 +31,7 @@ export const SEO = {
   shop: {
     title: "Boutique — Bijoux artisanaux faits main | Heaven's By Elena",
     description:
-      "Explorez notre boutique de bijoux artisanaux : colliers, boucles d'oreille, parures, créations en résine et accessoires. Pièces uniques faites main en France.",
+      "Explorez notre boutique de bijoux artisanaux : colliers, boucles d'oreilles, parures, créations en résine et accessoires. Pièces uniques faites main en France.",
     keywords: [
       'boutique bijoux artisanaux',
       'acheter bijoux faits main',

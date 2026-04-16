@@ -1,6 +1,4 @@
-import { cookies } from 'next/headers';
-import { verifySessionToken, COOKIE_NAME } from '@/lib/jwt';
-import { redirect } from 'next/navigation';
+import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import AdminTabs from '@/components/Admin/AdminTabs';
 
@@ -21,15 +19,7 @@ interface OrderRow {
  * Données chargées côté serveur avec createAdminClient (pas de dépendance session Supabase).
  */
 export default async function AdminDashboardPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) {
-    redirect('/api/auth/sync-session?then=/admin');
-  }
-  const payload = await verifySessionToken(token);
-  if (!payload || payload.role !== 'admin') {
-    redirect('/api/auth/sync-session?then=/admin');
-  }
+  await requireAdmin();
 
   const admin = createAdminClient();
 
@@ -47,9 +37,26 @@ export default async function AdminDashboardPage() {
     admin.from('reviews').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     admin.from('orders').select('id, total, total_price, subtotal, shipping_cost, status, created_at, customer_name').order('created_at', { ascending: false }).limit(5),
     admin.from('products').select('id, image_url, name, category, price, stock').order('created_at', { ascending: false }),
-    admin.from('orders').select('id, customer_name, customer_email, total, total_price, subtotal, shipping_cost, shipping_address, status, created_at, items').order('created_at', { ascending: false }),
+    admin
+      .from('orders')
+      .select(
+        'id, customer_name, customer_email, total, total_price, subtotal, shipping_cost, shipping_address, shipping_method, pickup_point, status, created_at, items, discount_amount, promo_code_id'
+      )
+      .order('created_at', { ascending: false }),
     admin.from('reviews').select('id, rating, comment, author_name, status, created_at').order('created_at', { ascending: false }),
   ]);
+
+  const ordersList = orders ?? [];
+  const promoIds = [...new Set(ordersList.map((o) => o.promo_code_id).filter((id): id is string => !!id))];
+  const { data: promoRows } =
+    promoIds.length > 0
+      ? await admin.from('promo_codes').select('id, code').in('id', promoIds)
+      : { data: [] as { id: string; code: string }[] };
+  const codeByPromoId = new Map((promoRows ?? []).map((p) => [p.id, p.code]));
+  const ordersWithPromoCodes = ordersList.map((o) => ({
+    ...o,
+    promo_codes: o.promo_code_id ? { code: codeByPromoId.get(o.promo_code_id) ?? '' } : null,
+  }));
 
   const dashboard = {
     nbProducts: nbProducts ?? 0,
@@ -70,7 +77,7 @@ export default async function AdminDashboardPage() {
     <AdminTabs
       dashboard={dashboard}
       products={products ?? []}
-      orders={orders ?? []}
+      orders={ordersWithPromoCodes}
       reviews={reviews ?? []}
     />
   );

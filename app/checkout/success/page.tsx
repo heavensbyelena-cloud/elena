@@ -66,7 +66,7 @@ export default function CheckoutSuccessPage() {
   return (
     <Suspense fallback={
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--gris)' }}>Chargement...</p>
+        <p style={{ color: 'var(--gris)' }}>Chargement…</p>
       </div>
     }>
       <SuccessContent />

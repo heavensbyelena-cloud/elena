@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
-import { requireAdminApi } from '@/lib/auth-api';
+import { requireAdminApi } from '@/lib/auth';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -19,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const auth = await requireAdminApi(request);
+    const auth = await requireAdminApi();
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const auth = await requireAdminApi(_req);
+    const auth = await requireAdminApi();
     if (auth instanceof NextResponse) return auth;
 
     const admin = createAdminClient();

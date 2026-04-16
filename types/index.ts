@@ -182,3 +182,35 @@ export interface CheckoutFormData {
   postal_code: string;
   country: string;
 }
+
+// ---------- CODES PROMO ----------
+export interface PromoCode {
+  id: string;
+  code: string;
+  type: 'percent';
+  value: number;
+  min_order: number | null;
+  max_uses: number | null;
+  uses_count: number;
+  is_personal: boolean;
+  expires_at: string | null;
+  active: boolean;
+  created_at: string;
+  assigned_users?: PromoCodeUser[];
+}
+
+export interface PromoCodeUser {
+  id: string;
+  promo_code_id: string;
+  user_id: string;
+  max_uses: number;
+  uses_count: number;
+  profile?: { email: string; first_name?: string; last_name?: string };
+}
+
+export interface AppliedPromo {
+  id: string;
+  code: string;
+  value: number;
+  discount_amount: number;
+}

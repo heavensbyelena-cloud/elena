@@ -11,7 +11,7 @@ import type { Product, ProductCategory } from '@/types';
 const DEFAULT_SEO = {
   title: "Boutique — Heaven's By Elena",
   description:
-    "Découvrez toutes les créations Heaven's By Elena : colliers, boucles d'oreille, parrures, bougies, lunettes, sacs et créations en résine.",
+    "Découvrez toutes les créations Heaven's By Elena : colliers, boucles d'oreilles, parures, bougies, lunettes, sacs et créations en résine.",
   ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Heaven%27s+By+Elena',
 };
 

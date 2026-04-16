@@ -1,0 +1,57 @@
+Configuration : emails d’authentification Supabase envoyés via Brevo (SMTP)
+================================================================================
+
+Ces étapes se font dans les tableaux de bord Brevo et Supabase (rien à ajouter dans .env
+pour le SMTP : la clé API BREVO_API_KEY sert à l’API REST du site, pas à ce relay).
+
+
+1) Brevo — identifiants SMTP et expéditeur
+------------------------------------------
+- Connexion : https://app.brevo.com
+- Vérifier un expéditeur (email) et, en production, authentifier le domaine (SPF/DKIM).
+- Menu « SMTP & API » (ou « Transactional ») → section SMTP :
+  - Serveur SMTP (souvent smtp-relay.brevo.com)
+  - Port : 587 (STARTTLS) en général
+  - Identifiant : ton adresse d’inscription Brevo
+  - Mot de passe : la clé SMTP affichée (distincte de la clé API REST v3)
+
+Conserver une copie sécurisée ; ne pas committer ces secrets dans le dépôt.
+
+
+2) Supabase — relais SMTP personnalisé
+----------------------------------------
+Projet Supabase → Authentication → Emails (ou Settings → Authentication selon l’UI).
+
+- Activer « Custom SMTP » / « Enable custom SMTP ».
+- Renseigner hôte, port, utilisateur, mot de passe Brevo (cf. étape 1).
+- « Sender email » et « Sender name » : alignés sur l’expéditeur validé dans Brevo
+  (ex. même identité que BREVO_SENDER_EMAIL / BREVO_SENDER_NAME côté app).
+
+
+3) Modèle « Confirm signup »
+-----------------------------
+Authentication → Email Templates → « Confirm signup ».
+
+- Sujet suggéré (à coller dans le champ Subject) : voir confirm-signup-subject.txt
+- Corps HTML : copier-coller le contenu de confirm-signup.html (variables Go template
+  documentées par Supabase, ex. {{ .ConfirmationURL }}, {{ .Email }}).
+
+Doc officielle : https://supabase.com/docs/guides/auth/auth-email-templates
+
+
+4) URLs de redirection (inscription + renvoi)
+-----------------------------------------------
+Authentication → URL Configuration.
+
+- Site URL : ex. https://ton-domaine.fr (dev : http://localhost:3000)
+- Redirect URLs : inclure au minimum
+  - http://localhost:3000/**
+  - https://ton-domaine.fr/**
+L’API d’inscription définit emailRedirectTo vers …/account/login (register + resend).
+
+
+5) Vérifications rapides
+------------------------
+- Créer un compte test : recevoir le mail depuis ton expéditeur Brevo ; le lien doit ouvrir
+  la page de connexion et confirmer l’email.
+- Bouton « Renvoyer l’email de confirmation » sur la page inscription : même canal SMTP.
