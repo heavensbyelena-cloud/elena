@@ -91,20 +91,20 @@ export default function AdminEditProductPage() {
     });
   }
 
-  const parentCategory = form.category.startsWith('resine-') ? 'resine' : form.category;
-  const isResineParent = parentCategory === 'resine';
+  const parentCategory = form.category.startsWith('decoration-') ? 'decoration' : form.category;
+  const isDecorationParent = parentCategory === 'decoration';
 
   function handleParentCategoryChange(slug: string) {
-    update('category', slug === 'resine' ? 'resine' : slug);
+    update('category', slug === 'decoration' ? 'decoration' : slug);
   }
 
   // À la soumission : PUT /api/products/[id]
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!id) return;
-    if (!form.name || !form.price || !form.category || form.category === 'resine') {
-      setError(form.category === 'resine'
-        ? 'Veuillez choisir ou créer une sous-catégorie résine.'
+    if (!form.name || !form.price || !form.category || form.category === 'decoration') {
+      setError(form.category === 'decoration'
+        ? 'Veuillez choisir ou créer une sous-catégorie décoration.'
         : 'Nom, prix et catégorie sont requis.');
       return;
     }
@@ -231,11 +231,11 @@ export default function AdminEditProductPage() {
             ))}
           </select>
 
-          {/* Sous-catégorie résine — apparaît uniquement si "Création Résine" est choisi */}
-          {isResineParent && (
+          {/* Sous-catégorie décoration */}
+          {isDecorationParent && (
             <ResineSubcatField
-              value={form.category.startsWith('resine-') ? form.category : ''}
-              onChange={slug => update('category', slug || 'resine')}
+              value={form.category.startsWith('decoration-') ? form.category : ''}
+              onChange={slug => update('category', slug || 'decoration')}
             />
           )}
         </div>

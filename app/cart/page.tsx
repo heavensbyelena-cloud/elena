@@ -4,12 +4,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import PromoInput from '@/components/Cart/PromoInput';
+import { calcShipping } from '@/lib/utils';
 
 function fmt(n: number) { return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'; }
 
 export default function CartPage() {
   const { items, total, appliedPromo, updateQuantity, removeFromCart, clearCart } = useCart();
-  const shipping = total >= 60 ? 0 : 4.9;
+  const shipping = calcShipping(total);
   const discount = appliedPromo?.discount_amount ?? 0;
   const grandTotal = Math.max(0, total + shipping - discount);
 

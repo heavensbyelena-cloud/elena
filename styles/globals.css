@@ -345,3 +345,118 @@
   from { opacity: 0; transform: translateX(-50%) translateY(10px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ── Mondial Relay (checkout) ─────────────────────────────
+   Le site est en thème sombre ; le widget MR est clair. Sans reset,
+   body { color: ivoire } se propage et rend listes / champs illisibles.
+   L’autocomplétion villes (jQuery UI) est souvent attachée à body. */
+
+.mondial-relay-checkout {
+  color-scheme: light;
+  padding: 16px;
+  border-radius: 6px;
+  background: #f2efe9;
+  border: 1px solid rgba(6, 6, 6, 0.1);
+}
+
+.mondial-relay-checkout #mr-widget-container {
+  background: #fafafa !important;
+  color: #141414 !important;
+}
+
+.mondial-relay-checkout #mr-widget-container input[type='text'],
+.mondial-relay-checkout #mr-widget-container input[type='search'],
+.mondial-relay-checkout #mr-widget-container select {
+  background-color: #ffffff !important;
+  color: #141414 !important;
+}
+
+/* Liste déroulante villes / CP — très souvent hors du conteneur */
+ul.ui-autocomplete.ui-widget-content,
+.ui-widget.ui-autocomplete,
+.ui-front.ui-autocomplete {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+  color: #141414 !important;
+  border: 1px solid rgba(6, 6, 6, 0.28) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22) !important;
+  z-index: 100050 !important;
+  max-height: min(320px, 50vh) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+ul.ui-autocomplete .ui-menu-item,
+ul.ui-autocomplete .ui-menu-item-wrapper {
+  background: #ffffff !important;
+  color: #141414 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.45 !important;
+  border: none !important;
+}
+
+ul.ui-autocomplete .ui-menu-item .ui-menu-item-wrapper {
+  padding: 10px 14px !important;
+}
+
+ul.ui-autocomplete .ui-state-focus,
+ul.ui-autocomplete .ui-state-active,
+ul.ui-autocomplete .ui-menu-item:hover .ui-menu-item-wrapper {
+  background: #e5dcd2 !important;
+  color: #000000 !important;
+  margin: 0 !important;
+}
+
+/* Mobile / étroit : widget MR sur toute la largeur utile + secours si mise en page 2 colonnes */
+@media (max-width: 768px) {
+  .mondial-relay-checkout {
+    padding: 10px 8px;
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border-radius: 4px;
+  }
+
+  .mondial-relay-checkout #mr-widget-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .mondial-relay-checkout #mr-widget-container table {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .mondial-relay-checkout #mr-widget-container tbody,
+  .mondial-relay-checkout #mr-widget-container thead {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .mondial-relay-checkout #mr-widget-container tr {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .mondial-relay-checkout #mr-widget-container td,
+  .mondial-relay-checkout #mr-widget-container th {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .mondial-relay-checkout #mr-widget-container .leaflet-container {
+    width: 100% !important;
+    min-height: 220px !important;
+    z-index: 1;
+  }
+}

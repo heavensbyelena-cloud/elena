@@ -67,7 +67,7 @@ export function calcCartCount(items: Array<{ qty: number }>): number {
 
 /** Calcule les frais de livraison (offerts dès 60€) */
 export function calcShipping(subtotal: number): number {
-  return subtotal >= 60 ? 0 : 4.9;
+  return subtotal >= 60 ? 0 : 3.99;
 }
 
 // ============================================================

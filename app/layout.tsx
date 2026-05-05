@@ -33,7 +33,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false;
   let isAdmin = false;
-  let resineSubcats: string[] = [];
+  let decorationSubcats: string[] = [];
 
   try {
     const { hasSession, user } = await getAuthAndProfile();
@@ -44,18 +44,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   try {
-    // Récupère les slugs résine uniques depuis les produits actifs
+    // Slugs decoration-* uniques depuis les produits actifs (menu déroulant)
     const admin = createAdminClient();
     const { data } = await admin
       .from('products')
       .select('category')
-      .like('category', 'resine-%')
+      .like('category', 'decoration-%')
       .eq('is_active', true);
     if (data) {
-      resineSubcats = [...new Set(data.map((p: { category: string }) => p.category))];
+      decorationSubcats = [...new Set(data.map((p: { category: string }) => p.category))];
     }
   } catch {
-    // Pas de produits résine ou erreur → on laisse vide
+    // Pas de produits ou erreur → on laisse vide
   }
 
   return (
@@ -71,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ToastProvider>
         <CartProvider>
-          <ConditionalLayout isLoggedIn={isLoggedIn} isAdmin={isAdmin} resineSubcats={resineSubcats}>
+          <ConditionalLayout isLoggedIn={isLoggedIn} isAdmin={isAdmin} decorationSubcats={decorationSubcats}>
             {children}
           </ConditionalLayout>
         </CartProvider>

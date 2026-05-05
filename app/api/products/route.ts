@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
+import { devLog } from '@/lib/dev-log';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const limit = parseInt(searchParams.get('limit') ?? '100', 10);
 
-    console.log('[GET /api/products] Requête:', {
+    devLog('[GET /api/products] Requête:', {
       category: category ?? 'tous',
       limit,
       query: `SELECT id, name, price, badge, category, image_url, stock, is_active FROM products WHERE is_active = true${category ? ` AND category = '${category}'` : ''} ORDER BY created_at DESC LIMIT ${limit}`,
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     const list = data ?? [];
-    console.log('[GET /api/products] Produits reçus:', list.length, 'entrée(s)', list.length ? list.map((p: { id: string; name: string; category: string }) => ({ id: p.id, name: p.name, category: p.category })) : '(tableau vide)');
+    devLog('[GET /api/products] Produits reçus:', list.length, 'entrée(s)', list.length ? list.map((p: { id: string; name: string; category: string }) => ({ id: p.id, name: p.name, category: p.category })) : '(tableau vide)');
 
     return NextResponse.json({ products: list });
   } catch (err) {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, description, price, category, badge, stock, image_url } = body;
 
-    console.log('[POST /api/products] Données reçues:', {
+    devLog('[POST /api/products] Données reçues:', {
       name,
       description: description ? '(présent)' : '(vide)',
       price,
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
     }
 
-    console.log('[POST /api/products] Variables d’environnement utilisées:', {
+    devLog('[POST /api/products] Variables d’environnement utilisées:', {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'défini' : 'manquant',
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'défini' : 'manquant',
     });
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
       image_url: image_url || null,
       is_active: true,
     };
-    console.log('[POST /api/products] Payload insert:', payload);
+    devLog('[POST /api/products] Payload insert:', payload);
 
     const { data, error } = await admin.from('products').insert([payload]).select().single();
 
@@ -103,7 +104,12 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[POST /api/products] Exception:', err);
     return NextResponse.json(
-      { error: 'Erreur serveur', debug: err instanceof Error ? err.message : String(err) },
+      {
+        error: 'Erreur serveur',
+        ...(process.env.NODE_ENV === 'development'
+          ? { debug: err instanceof Error ? err.message : String(err) }
+          : {}),
+      },
       { status: 500 }
     );
   }

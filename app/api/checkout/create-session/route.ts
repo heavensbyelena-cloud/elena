@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase-server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { devLog } from '@/lib/dev-log';
+import { checkProductionSiteUrl, getPublicSiteUrl } from '@/lib/site-url';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -88,13 +89,24 @@ async function validatePromoForCheckout(
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[create-session] STRIPE_SECRET_KEY:', stripeSecretKey ? 'défini' : 'manquant');
+  devLog('[create-session] STRIPE_SECRET_KEY:', stripeSecretKey ? 'défini' : 'manquant');
   if (!stripeSecretKey) {
     return NextResponse.json(
       { error: 'Stripe n\'est pas configuré (STRIPE_SECRET_KEY manquant)' },
       { status: 500 }
     );
   }
+
+  const siteCheck = checkProductionSiteUrl();
+  if (!siteCheck.ok) {
+    console.error('[create-session]', siteCheck.reason);
+    return NextResponse.json(
+      { error: 'Configuration serveur incomplète' },
+      { status: 500 }
+    );
+  }
+
+  const siteUrl = getPublicSiteUrl();
 
   try {
     const body = await request.json();
@@ -117,11 +129,11 @@ export async function POST(request: NextRequest) {
     const promoId =
       typeof promo_id === 'string' && promo_id.length > 0 ? promo_id : null;
 
-    console.log('[create-session] Données reçues:', {
+    devLog('[create-session] Données reçues:', {
       itemsCount: items?.length,
       customer_email,
       total,
-      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+      siteUrl,
     });
 
     if (!items?.length || !customer_email) {
@@ -287,14 +299,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session.id || !session.url) {
-      console.error('[create-session] Session sans id ou url', session);
+      console.error('[create-session] Session sans id ou url');
       return NextResponse.json(
         { error: 'Erreur lors de la création de la session Stripe' },
         { status: 500 }
       );
     }
 
-    console.log('[create-session] Stripe Session créée:', { sessionId: session.id, url: session.url ? 'ok' : 'manquant' });
+    devLog('[create-session] Stripe Session créée:', { sessionId: session.id, url: session.url ? 'ok' : 'manquant' });
 
     // Commande enregistrée avec les prix de la base de données
     const orderItems = (items as Array<{ id: string; qty: number }>).map((i) => {
@@ -328,10 +340,10 @@ export async function POST(request: NextRequest) {
       },
     ]);
 
-    console.log('[create-session] Commande pending créée, retour url + sessionId');
+    devLog('[create-session] Commande pending créée, retour url + sessionId');
     return NextResponse.json({ url: session.url, sessionId: session.id });
   } catch (err) {
-    console.error('[create-session] Erreur:', err);
+    console.error('[create-session] Erreur:', err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: 'Erreur lors de la création du paiement' },
       { status: 500 }

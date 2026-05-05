@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase-server';
 import { sendOrderConfirmationEmail, type OrderEmailRow } from '@/lib/email/order-emails';
+import { devLog } from '@/lib/dev-log';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
         items: row.items as OrderEmailRow['items'],
       });
 
-      console.log('[webhook/stripe] Commande confirmée:', row.id);
+      devLog('[webhook/stripe] Commande confirmée:', row.id);
     } catch (err) {
       console.error('[webhook/stripe] Erreur traitement:', err);
       return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });

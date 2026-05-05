@@ -6,17 +6,21 @@
 export type ProductCategory =
   | 'colliers'
   | 'boucles'
+  | 'bague'
+  | 'bracelets'
   | 'parrure'
   | 'bougies'
   | 'lunettes'
   | 'sacs'
-  | 'resine'
-  | 'resine-plateaux'
-  | 'resine-bijoux'
-  | 'resine-deco'
-  | 'resine-boites'
-  | 'resine-portecles'
-  | 'resine-perso';
+  | 'homme'
+  | 'enfant'
+  | 'decoration'
+  | 'decoration-plateaux'
+  | 'decoration-bijoux'
+  | 'decoration-deco'
+  | 'decoration-boites'
+  | 'decoration-portecles'
+  | 'decoration-perso';
 
 export interface Product {
   id: string;
@@ -25,7 +29,7 @@ export interface Product {
   price: number;
   /**
    * Catégorie technique (slug) stockée en base.
-   * Les créations résine utilisent un slug préfixé : resine-plateaux, resine-bijoux, etc.
+   * La décoration et sous-rayons : slugs préfixés decoration-plateaux, decoration-bijoux, etc.
    */
   category: ProductCategory;
   badge?: string;
@@ -40,17 +44,21 @@ export interface Product {
 export const PRODUCT_CATEGORIES: ProductCategory[] = [
   'colliers',
   'boucles',
+  'bague',
+  'bracelets',
   'parrure',
   'bougies',
   'lunettes',
   'sacs',
-  'resine',
-  'resine-plateaux',
-  'resine-bijoux',
-  'resine-deco',
-  'resine-boites',
-  'resine-portecles',
-  'resine-perso',
+  'homme',
+  'enfant',
+  'decoration',
+  'decoration-plateaux',
+  'decoration-bijoux',
+  'decoration-deco',
+  'decoration-boites',
+  'decoration-portecles',
+  'decoration-perso',
 ];
 
 // ---------- PANIER ----------

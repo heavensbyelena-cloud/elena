@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/lib/auth';
+import { devLog } from '@/lib/dev-log';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,8 +21,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Log des variables d'environnement (sans afficher la clé secrète)
-  console.log('[POST /api/orders] Env:', {
+  devLog('[POST /api/orders] Env:', {
     NEXT_PUBLIC_STRIPE_PUBLIC_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ? 'défini' : 'manquant',
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ? 'défini' : 'manquant',
   });
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { items, shipping_address, customer_email, customer_name, subtotal, shipping_cost, total } = body;
 
-    console.log('[POST /api/orders] Données reçues:', {
+    devLog('[POST /api/orders] Données reçues:', {
       itemsCount: items?.length ?? 0,
       items: items?.slice(0, 2),
       customer_email,
@@ -42,14 +42,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!items?.length || !customer_email || !shipping_address) {
-      console.log('[POST /api/orders] Validation échouée: données manquantes');
+      devLog('[POST /api/orders] Validation échouée: données manquantes');
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
     }
 
     const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    console.log('[POST /api/orders] User:', user ? { id: user.id, email: user.email } : 'non connecté');
+    devLog('[POST /api/orders] User:', user ? { id: user.id, email: user.email } : 'non connecté');
 
     const admin = createAdminClient();
     const totalPrice = total ?? 0;
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       status: 'pending',
       payment_id: null,
     };
-    console.log('[POST /api/orders] Insert Supabase payload:', JSON.stringify(payload, null, 2));
+    devLog('[POST /api/orders] Insert Supabase payload:', JSON.stringify(payload, null, 2));
 
     const { data, error } = await admin.from('orders').insert([payload]).select().single();
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       console.error('[POST /api/orders] Erreur Supabase:', error.message, error.code, error.details);
       throw error;
     }
-    console.log('[POST /api/orders] Commande créée:', data?.id);
+    devLog('[POST /api/orders] Commande créée:', data?.id);
     return NextResponse.json({ order: data }, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

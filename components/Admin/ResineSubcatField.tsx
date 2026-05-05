@@ -1,23 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CATEGORIES, getResineSubcatLabel } from '@/lib/categories';
+import { CATEGORIES, getDecorationSubcatLabel } from '@/lib/categories';
 
 interface Props {
-  /** Slug actuel (ex: 'resine-plateaux') — vide si pas encore choisi */
+  /** Slug actuel (ex: 'decoration-plateaux') — vide si pas encore choisi */
   value: string;
   onChange: (slug: string) => void;
 }
 
-/** Convertit un texte libre en slug résine : "Miroirs en résine" → "resine-miroirs-en-resine" */
-function toResineSlug(text: string): string {
+/** Convertit un texte libre en slug decoration- : "Plateau doré" → "decoration-plateau-dore" */
+function toDecorationSlug(text: string): string {
   const base = text
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')  // supprime les accents
     .replace(/[^a-z0-9]+/g, '-')      // remplace tout sauf lettres/chiffres par -
     .replace(/(^-|-$)/g, '');          // supprime les - en début/fin
-  return `resine-${base}`;
+  return `decoration-${base}`;
 }
 
 export default function ResineSubcatField({ value, onChange }: Props) {
@@ -25,7 +25,7 @@ export default function ResineSubcatField({ value, onChange }: Props) {
   const [isNew, setIsNew] = useState(false);
   const [newName, setNewName] = useState('');
 
-  // Charge les sous-catégories résine déjà présentes dans les produits en base
+  // Sous-catégories décor déjà présentes dans les produits en base
   useEffect(() => {
     fetch('/api/products')
       .then(r => r.json())
@@ -33,22 +33,22 @@ export default function ResineSubcatField({ value, onChange }: Props) {
         const products: { category: string }[] = data.products ?? [];
         const slugs = [...new Set(
           products
-            .filter(p => p.category?.startsWith('resine-'))
+            .filter(p => p.category?.startsWith('decoration-'))
             .map(p => p.category)
         )];
-        setDbSubcats(slugs.map(slug => ({ slug, label: getResineSubcatLabel(slug) })));
+        setDbSubcats(slugs.map(slug => ({ slug, label: getDecorationSubcatLabel(slug) })));
       })
       .catch(() => {});
   }, []);
 
   // Fusionne config statique + sous-catégories en base (sans doublons)
-  const configSubcats = CATEGORIES.find(c => c.slug === 'resine')?.subcategories ?? [];
+  const configSubcats = CATEGORIES.find(c => c.slug === 'decoration')?.subcategories ?? [];
   const allSubcats = [
     ...configSubcats,
     ...dbSubcats.filter(db => !configSubcats.find(c => c.slug === db.slug)),
   ];
 
-  const generatedSlug = newName.trim() ? toResineSlug(newName.trim()) : '';
+  const generatedSlug = newName.trim() ? toDecorationSlug(newName.trim()) : '';
 
   function handleSelectChange(val: string) {
     if (val === '__new__') {
@@ -63,7 +63,7 @@ export default function ResineSubcatField({ value, onChange }: Props) {
 
   function handleNewNameChange(text: string) {
     setNewName(text);
-    onChange(text.trim() ? toResineSlug(text.trim()) : '');
+    onChange(text.trim() ? toDecorationSlug(text.trim()) : '');
   }
 
   // Si la valeur actuelle n'est pas dans la liste connue, on est en mode "nouvelle"
@@ -80,7 +80,7 @@ export default function ResineSubcatField({ value, onChange }: Props) {
       borderLeft: '3px solid var(--accent)',
     }}>
       <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>
-        Sous-catégorie résine *
+        Sous-catégorie décoration *
       </label>
 
       <select
@@ -102,7 +102,7 @@ export default function ResineSubcatField({ value, onChange }: Props) {
             type="text"
             value={newName}
             onChange={e => handleNewNameChange(e.target.value)}
-            placeholder="Ex : Miroirs en résine"
+            placeholder="Ex : Plateaux et miroirs"
             className="form-input"
             autoFocus
           />

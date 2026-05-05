@@ -5,13 +5,13 @@ import { useSearchParams } from 'next/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
 import ProductGrid from '@/components/Product/ProductGrid';
-import { CATEGORIES, getCategoryBySlug, isResineSlug, getResineSubcatLabel } from '@/lib/categories';
+import { CATEGORIES, getCategoryBySlug, isDecorationSlug, getDecorationSubcatLabel } from '@/lib/categories';
 import type { Product, ProductCategory } from '@/types';
 
 const DEFAULT_SEO = {
   title: "Boutique — Heaven's By Elena",
   description:
-    "Découvrez toutes les créations Heaven's By Elena : colliers, boucles d'oreilles, parures, bougies, lunettes, sacs et créations en résine.",
+    "Découvrez toutes les créations Heaven's By Elena : colliers, boucles d'oreilles, parures, bougies, lunettes, sacs, Homme, Enfant et décoration.",
   ogImage: 'https://placehold.co/1200x630/F5E6E0/8A8A8A?text=Heaven%27s+By+Elena',
 };
 
@@ -59,23 +59,23 @@ function ShopPageContent() {
       ? process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
       : process.env.NEXT_PUBLIC_SITE_URL ?? '';
 
-  // Catégorie active = "resine" si l'un des slugs résine est sélectionné
-  const isResineActive = activeCategory ? isResineSlug(activeCategory) : false;
+  // Catégorie active = "decoration" si l'un des slugs décoration est sélectionné
+  const isDecorationActive = activeCategory ? isDecorationSlug(activeCategory) : false;
 
-  // Sous-catégories résine dérivées des produits chargés (100% dynamique)
-  const resineSubcats = useMemo(() => {
+  // Sous-catégories décoration dérivées des produits chargés (100% dynamique)
+  const decorationSubcats = useMemo(() => {
     const slugs = [...new Set(
-      products.filter(p => p.category.startsWith('resine-')).map(p => p.category)
+      products.filter(p => p.category.startsWith('decoration-')).map(p => p.category)
     )].sort();
-    return slugs.map(slug => ({ slug, label: getResineSubcatLabel(slug) }));
+    return slugs.map(slug => ({ slug, label: getDecorationSubcatLabel(slug) }));
   }, [products]);
 
   const currentSeo = useMemo(() => {
     if (!activeCategory) return DEFAULT_SEO;
     const cat = getCategoryBySlug(activeCategory);
     if (cat) return cat.seo;
-    // Sous-catégorie résine : utiliser le SEO résine parent
-    if (isResineSlug(activeCategory)) return getCategoryBySlug('resine')?.seo ?? DEFAULT_SEO;
+    // Sous-catégorie décoration : utiliser le SEO parent
+    if (isDecorationSlug(activeCategory)) return getCategoryBySlug('decoration')?.seo ?? DEFAULT_SEO;
     return DEFAULT_SEO;
   }, [activeCategory]);
 
@@ -119,9 +119,9 @@ function ShopPageContent() {
     setActive(cat);
     if (!cat) {
       setFiltered(products);
-    } else if (cat === 'resine') {
-      // "Tout voir Résine" = afficher tous les produits résine (parent + sous-catégories)
-      setFiltered(products.filter(p => isResineSlug(p.category)));
+    } else if (cat === 'decoration') {
+      // "Tout voir" décoration = parent + sous-catégories decoration-*
+      setFiltered(products.filter(p => isDecorationSlug(p.category)));
     } else {
       setFiltered(products.filter(p => p.category === cat));
     }
@@ -132,10 +132,10 @@ function ShopPageContent() {
     if (!activeCategory) return null;
     const cat = getCategoryBySlug(activeCategory);
     if (cat) return cat.label;
-    // Sous-catégorie résine : cherche dans les slugs dérivés des produits
-    const sub = resineSubcats.find(s => s.slug === activeCategory);
-    return sub?.label ?? getResineSubcatLabel(activeCategory);
-  }, [activeCategory, resineSubcats]);
+    // Sous-catégorie décoration : cherche dans les slugs dérivés des produits
+    const sub = decorationSubcats.find(s => s.slug === activeCategory);
+    return sub?.label ?? getDecorationSubcatLabel(activeCategory);
+  }, [activeCategory, decorationSubcats]);
 
   return (
     <div style={{ minHeight: '80vh', background: 'var(--fond)' }}>
@@ -191,28 +191,28 @@ function ShopPageContent() {
       </div>
 
       {/* Filtres — catégories principales */}
-      <div style={{ padding: '30px 40px 16px', borderBottom: isResineActive ? 'none' : '1px solid var(--bordure)', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', background: 'var(--fond-casse)' }}>
+      <div style={{ padding: '30px 40px 16px', borderBottom: isDecorationActive ? 'none' : '1px solid var(--bordure)', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', background: 'var(--fond-casse)' }}>
         <FilterPill label="Tous les produits" active={!activeCategory} onClick={() => filterBy(null)} />
         {CATEGORIES.map(cat => (
           <FilterPill
             key={cat.slug}
             label={cat.label}
-            active={activeCategory === cat.slug || (cat.slug === 'resine' && isResineActive)}
+            active={activeCategory === cat.slug || (cat.slug === 'decoration' && isDecorationActive)}
             onClick={() => filterBy(cat.slug as ProductCategory)}
           />
         ))}
       </div>
 
-      {/* Sous-filtres résine — uniquement si des produits résine existent */}
-      {isResineActive && resineSubcats.length > 0 && (
+      {/* Sous-filtres décoration — uniquement si des produits decoration-* existent */}
+      {isDecorationActive && decorationSubcats.length > 0 && (
         <div style={{ padding: '12px 40px 20px', borderBottom: '1px solid var(--bordure)', display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', background: 'var(--fond-casse)' }}>
           <FilterPill
             label="Tout voir"
-            active={activeCategory === 'resine'}
-            onClick={() => filterBy('resine')}
+            active={activeCategory === 'decoration'}
+            onClick={() => filterBy('decoration')}
             small
           />
-          {resineSubcats.map(sub => (
+          {decorationSubcats.map(sub => (
             <FilterPill
               key={sub.slug}
               label={sub.label}

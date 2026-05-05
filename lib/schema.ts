@@ -14,7 +14,7 @@ export function organizationSchema() {
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
     description:
-      "Créatrice de bijoux artisanaux faits main en France. Colliers, boucles d'oreilles, créations en résine et accessoires uniques en acier inoxydable.",
+      "Créatrice de bijoux artisanaux faits main en France. Colliers, boucles d'oreilles, décoration artisanale et accessoires uniques en acier inoxydable.",
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'FR',
@@ -54,7 +54,7 @@ export function localBusinessSchema() {
     url: SITE_URL,
     image: `${SITE_URL}/og-image.jpg`,
     description:
-      "Bijoux artisanaux français faits main. Créations uniques en acier inoxydable et résine.",
+      "Bijoux artisanaux français faits main. Créations uniques en acier inoxydable et décoration artisanale.",
     priceRange: '€€',
     address: {
       '@type': 'PostalAddress',

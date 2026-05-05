@@ -7,7 +7,7 @@ import type { ProductCategory } from '@/types';
 import { CATEGORIES } from '@/lib/categories';
 import ResineSubcatField from '@/components/Admin/ResineSubcatField';
 
-// Catégories parentes uniquement (pas les sous-catégories résine — gérées séparément)
+// Catégories parentes uniquement (pas les sous-catégories decoration-* — gérées séparément)
 const CATS: { slug: string; label: string }[] = CATEGORIES.map(cat => ({
   slug: cat.slug,
   label: cat.label,
@@ -33,14 +33,14 @@ export default function AdminNewProductPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // "resine" = catégorie parente sélectionnée → affiche ResineSubcatField
-  const parentCategory = form.category.startsWith('resine-') ? 'resine' : form.category;
-  const isResineParent = parentCategory === 'resine';
+  // "decoration" = catégorie parente sélectionnée → affiche ResineSubcatField
+  const parentCategory = form.category.startsWith('decoration-') ? 'decoration' : form.category;
+  const isDecorationParent = parentCategory === 'decoration';
 
   function handleParentCategoryChange(slug: string) {
-    if (slug === 'resine') {
-      // On garde 'resine' temporairement — ResineSubcatField posera le vrai slug
-      update('category', 'resine');
+    if (slug === 'decoration') {
+      // On garde 'decoration' temporairement — ResineSubcatField posera le vrai slug
+      update('category', 'decoration');
     } else {
       update('category', slug);
     }
@@ -97,9 +97,9 @@ export default function AdminNewProductPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.price || !form.category || form.category === 'resine') {
-      setError(form.category === 'resine'
-        ? 'Veuillez choisir ou créer une sous-catégorie résine.'
+    if (!form.name || !form.price || !form.category || form.category === 'decoration') {
+      setError(form.category === 'decoration'
+        ? 'Veuillez choisir ou créer une sous-catégorie décoration.'
         : 'Nom, prix et catégorie sont requis.');
       return;
     }
@@ -240,11 +240,11 @@ export default function AdminNewProductPage() {
             ))}
           </select>
 
-          {/* Sous-catégorie résine — apparaît uniquement si "Création Résine" est choisi */}
-          {isResineParent && (
+          {/* Sous-catégorie décoration */}
+          {isDecorationParent && (
             <ResineSubcatField
-              value={form.category.startsWith('resine-') ? form.category : ''}
-              onChange={slug => update('category', slug || 'resine')}
+              value={form.category.startsWith('decoration-') ? form.category : ''}
+              onChange={slug => update('category', slug || 'decoration')}
             />
           )}
         </div>

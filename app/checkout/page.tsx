@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { createClient } from '@/lib/supabase-client';
 import PromoInput from '@/components/Cart/PromoInput';
+import { calcShipping } from '@/lib/utils';
 
 function fmt(n: number) {
   return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
@@ -23,7 +24,7 @@ interface PickupPoint {
 
 export default function CheckoutPage() {
   const { items, total, appliedPromo } = useCart();
-  const shipping = total >= 60 ? 0 : 4.9;
+  const shipping = calcShipping(total);
   const discount = appliedPromo?.discount_amount ?? 0;
   const orderTotal = Math.max(0, total + shipping - discount);
 
@@ -32,7 +33,6 @@ export default function CheckoutPage() {
   const [widgetStatus, setWidgetStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [widgetError, setWidgetError] = useState('');
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapReady = widgetStatus === 'ready';
 
   const [form, setForm] = useState({
     firstName: '',
@@ -47,6 +47,16 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  /** Largeur > 768px : carte + liste ; sinon liste seule (évite colonnes illisibles sur mobile). */
+  const [mrShowMapLayout, setMrShowMapLayout] = useState(false);
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const sync = () => setMrShowMapLayout(!mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   // Pré-remplir avec le profil connecté
   useEffect(() => {
@@ -82,11 +92,22 @@ export default function CheckoutPage() {
     })();
   }, []);
 
-  // Charger le widget Mondial Relay quand "point_relay" est sélectionné
+  // Réinitialiser proprement quand on quitte le mode point relais
+  useEffect(() => {
+    if (shippingMethod === 'point_relay') return;
+    setWidgetStatus('idle');
+    setWidgetError('');
+    const el = document.getElementById('mr-widget-container');
+    if (el) el.innerHTML = '';
+  }, [shippingMethod]);
+
+  // Charger le widget Mondial Relay quand "point_relay" est sélectionné (scripts mis en cache après le 1er chargement)
   useEffect(() => {
     if (shippingMethod !== 'point_relay') return;
 
     let cancelled = false;
+    let rafOuter = 0;
+    let rafInner = 0;
     setWidgetStatus('loading');
     setWidgetError('');
 
@@ -94,8 +115,8 @@ export default function CheckoutPage() {
       return new Promise((resolve, reject) => {
         const existing = document.getElementById(id) as HTMLScriptElement | null;
         if (existing) {
-          // script déjà présent — attendre qu'il soit chargé si besoin
-          if ((existing as HTMLScriptElement & { readyState?: string }).readyState === 'loading') {
+          const rs = (existing as HTMLScriptElement & { readyState?: string }).readyState;
+          if (rs === 'loading' || rs === 'uninitialized') {
             existing.addEventListener('load', () => resolve());
             existing.addEventListener('error', () => reject(new Error(`Erreur script: ${src}`)));
           } else {
@@ -106,6 +127,7 @@ export default function CheckoutPage() {
         const s = document.createElement('script');
         s.id = id;
         s.src = src;
+        s.async = false;
         s.onload = () => resolve();
         s.onerror = () => reject(new Error(`Impossible de charger: ${src}`));
         document.head.appendChild(s);
@@ -115,7 +137,9 @@ export default function CheckoutPage() {
     function loadStyle(id: string, href: string) {
       if (document.getElementById(id)) return;
       const l = document.createElement('link');
-      l.id = id; l.rel = 'stylesheet'; l.href = href;
+      l.id = id;
+      l.rel = 'stylesheet';
+      l.href = href;
       document.head.appendChild(l);
     }
 
@@ -132,57 +156,69 @@ export default function CheckoutPage() {
       setError('');
     }
 
-    async function initWidget() {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = window as any;
+    async function ensureRelayDeps(): Promise<void> {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win = window as any;
+      loadStyle('leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+      loadStyle('mondial-relay-css', 'https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.css');
 
-        // 1. CSS Leaflet (carte OpenStreetMap)
-        loadStyle('leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-        // 2. CSS Mondial Relay
-        loadStyle('mondial-relay-css', 'https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.css');
-
-        // 3. Supprimer les anciennes versions de scripts si présentes
-        ['jquery-script', 'leaflet-script', 'mondial-relay-script'].forEach(id => {
-          document.getElementById(id)?.remove();
-        });
-
-        // 4. jQuery 2.2.4 (compatible MR widget v4+)
+      if (!win.__hbemrDepsLoaded) {
         await loadScript('jquery-script', 'https://code.jquery.com/jquery-2.2.4.min.js');
         if (cancelled) return;
         if (!win.$) win.$ = win.jQuery;
-
-        // 5. Leaflet JS (requis pour la carte)
         await loadScript('leaflet-script', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
         if (cancelled) return;
-
-        // 6. Plugin Mondial Relay (URL sans numéro de version — URL officielle actuelle)
         await loadScript(
           'mondial-relay-script',
           'https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.js'
         );
         if (cancelled) return;
+        win.__hbemrDepsLoaded = true;
+      }
+      if (!win.$) win.$ = win.jQuery;
+    }
 
-        const jq = win.jQuery;
-        if (!jq) throw new Error('jQuery non disponible');
+    async function initWidget() {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const win = window as any;
+        await ensureRelayDeps();
+        if (cancelled) return;
 
-        // Le plugin s'appelle MR_ParcelShopPicker (avec underscore)
-        if (!jq.fn.MR_ParcelShopPicker) {
-          throw new Error(`Plugin MR_ParcelShopPicker introuvable après chargement du script`);
+        const jq = win.jQuery as {
+          (sel: string): {
+            empty: () => unknown;
+            MR_ParcelShopPicker: (opts: Record<string, unknown>) => unknown;
+          };
+          fn: { MR_ParcelShopPicker?: unknown };
+        };
+        if (!jq?.fn.MR_ParcelShopPicker) {
+          throw new Error('Plugin MR_ParcelShopPicker introuvable après chargement du script');
         }
 
-        if (!document.getElementById('mr-widget-container')) {
+        const containerEl = document.getElementById('mr-widget-container');
+        if (!containerEl) {
           throw new Error('Conteneur #mr-widget-container introuvable dans le DOM');
         }
 
-        jq('#mr-widget-container').MR_ParcelShopPicker({
-          Target:              '#mr-selected-point',
-          Brand:               'CC23VJJS',
-          Country:             'FR',
-          Responsive:          true,
-          ShowResultsOnMap:    true,
+        jq('#mr-widget-container').empty();
+
+        const postal = form.postal.trim();
+
+        const pickerOpts: Record<string, unknown> = {
+          Target:               '#mr-selected-point',
+          Brand:                'CC23VJJS',
+          Country:              'FR',
+          Responsive:           true,
+          ShowResultsOnMap:     mrShowMapLayout,
+          Theme:                'mondialrelay',
           OnParcelShopSelected: onPointSelected,
-        });
+        };
+        if (/^\d{5}$/.test(postal)) {
+          pickerOpts.PostCode = postal;
+        }
+
+        jq('#mr-widget-container').MR_ParcelShopPicker(pickerOpts);
 
         if (!cancelled) setWidgetStatus('ready');
       } catch (err) {
@@ -194,9 +230,19 @@ export default function CheckoutPage() {
       }
     }
 
-    initWidget();
-    return () => { cancelled = true; };
-  }, [shippingMethod]);
+    // Laisser le conteneur être monté dans le DOM avant Leaflet / MR
+    rafOuter = window.requestAnimationFrame(() => {
+      rafInner = window.requestAnimationFrame(() => {
+        initWidget();
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafOuter);
+      cancelAnimationFrame(rafInner);
+    };
+  }, [shippingMethod, form.postal, mrShowMapLayout]);
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -330,7 +376,7 @@ export default function CheckoutPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[
               { value: 'home_delivery', label: 'Livraison à domicile', desc: 'Livraison Colissimo à votre adresse' },
-              { value: 'point_relay',   label: 'Point Mondial Relay',   desc: 'Retrait gratuit en point relais' },
+              { value: 'point_relay',   label: 'Point Mondial Relay',   desc: 'Retrait en point relais' },
             ].map(opt => (
               <label
                 key={opt.value}
@@ -347,7 +393,11 @@ export default function CheckoutPage() {
                   name="shippingMethod"
                   value={opt.value}
                   checked={shippingMethod === opt.value}
-                  onChange={() => { setShippingMethod(opt.value as ShippingMethod); setPickupPoint(null); setMapReady(false); setError(''); }}
+                  onChange={() => {
+                    setShippingMethod(opt.value as ShippingMethod);
+                    setPickupPoint(null);
+                    setError('');
+                  }}
                   style={{ marginTop: '3px', accentColor: 'var(--accent, #b8956a)' }}
                 />
                 <div>
@@ -378,26 +428,27 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* Widget Mondial Relay */}
+          {/* Widget Mondial Relay — surface claire : le widget MR n'hérite pas du texte ivoire du body */}
           {shippingMethod === 'point_relay' && (
-            <div style={{ marginTop: '24px' }}>
+            <div className="surface-light mondial-relay-checkout" style={{ marginTop: '24px' }}>
               {/* Point sélectionné */}
               {pickupPoint && (
                 <div style={{
                   padding: '14px 16px', marginBottom: '16px',
-                  border: '1px solid var(--accent, #b8956a)',
-                  background: 'var(--accent-clair, #faf5ef)',
+                  border: '1px solid rgba(6, 6, 6, 0.12)',
+                  background: '#ffffff',
                   fontSize: '0.85rem', lineHeight: 1.6,
+                  color: '#141414',
                 }}>
-                  <p style={{ fontWeight: 600, marginBottom: '4px' }}>✓ Point sélectionné</p>
-                  <p style={{ fontWeight: 500 }}>{pickupPoint.name}</p>
-                  <p style={{ color: 'var(--gris)' }}>{pickupPoint.address}</p>
-                  <p style={{ color: 'var(--gris)' }}>{pickupPoint.zipCode} {pickupPoint.city}</p>
+                  <p style={{ fontWeight: 600, marginBottom: '4px', color: '#141414' }}>✓ Point sélectionné</p>
+                  <p style={{ fontWeight: 500, color: '#141414' }}>{pickupPoint.name}</p>
+                  <p style={{ color: '#4a4540' }}>{pickupPoint.address}</p>
+                  <p style={{ color: '#4a4540' }}>{pickupPoint.zipCode} {pickupPoint.city}</p>
                 </div>
               )}
 
               {/* Conteneur de la carte */}
-              <div ref={mapContainerRef}>
+              <div ref={mapContainerRef} style={{ position: 'relative', width: '100%' }}>
                 <input type="hidden" id="mr-selected-point" />
 
                 {widgetStatus === 'error' ? (
@@ -417,16 +468,50 @@ export default function CheckoutPage() {
                     </button>
                   </div>
                 ) : (
-                  <div
-                    id="mr-widget-container"
-                    style={{ width: '100%', minHeight: '420px', border: '1px solid var(--bordure)', position: 'relative' }}
-                  />
-                )}
-
-                {widgetStatus === 'loading' && (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--gris)', marginTop: '8px', textAlign: 'center' }}>
-                    Chargement de la carte…
-                  </p>
+                  <>
+                    <div
+                      id="mr-widget-container"
+                      style={{
+                        width: '100%',
+                        minHeight: '420px',
+                        border: '1px solid var(--bordure)',
+                        position: 'relative',
+                        contain: 'layout paint',
+                      }}
+                    />
+                    {widgetStatus === 'loading' && (
+                      <div
+                        aria-busy="true"
+                        aria-live="polite"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '12px',
+                          background: 'rgba(250, 248, 245, 0.92)',
+                          zIndex: 2,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            border: '2px solid var(--bordure)',
+                            borderTopColor: 'var(--accent, #b8956a)',
+                            borderRadius: '50%',
+                            animation: 'hbemr-spin 0.75s linear infinite',
+                          }}
+                        />
+                        <span style={{ fontSize: '0.82rem', color: 'var(--gris)', letterSpacing: '0.06em' }}>
+                          Chargement de la carte…
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -509,6 +594,9 @@ export default function CheckoutPage() {
       </div>
 
       <style>{`
+        @keyframes hbemr-spin {
+          to { transform: rotate(360deg); }
+        }
         /* ── Mobile ── */
         @media(max-width: 768px) {
           .checkout-wrapper {
@@ -539,9 +627,9 @@ export default function CheckoutPage() {
           .shipping-option {
             padding: 16px 14px !important;
           }
-          /* Widget MR — hauteur réduite sur mobile */
+          /* Widget MR : hauteur confortable liste / carte selon breakpoint */
           #mr-widget-container {
-            min-height: 340px !important;
+            min-height: min(420px, 55vh) !important;
           }
           /* Bouton payer — taille confortable */
           .btn-pay {

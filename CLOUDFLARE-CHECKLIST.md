@@ -25,17 +25,26 @@ Si les noms diffèrent, modifie wrangler.toml pour qu’ils correspondent.
 
 À configurer pour **Production** :
 
+**Obligatoires (site + paiement + admin)**
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `AUTH_SECRET` (ou `JWT_SECRET`)
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
+- `SUPABASE_SERVICE_ROLE_KEY` (secret)
+- `AUTH_SECRET` (secret)
+- `STRIPE_SECRET_KEY` (secret)
+- `STRIPE_WEBHOOK_SECRET` (secret — même mode test/live que les clés Stripe)
 - `NEXT_PUBLIC_STRIPE_PUBLIC_KEY`
-- `NEXT_PUBLIC_SITE_URL` = `https://heaven.TON_COMPTE.workers.dev`
+- `NEXT_PUBLIC_SITE_URL` = URL publique HTTPS du site, ex. `https://www.heavensbyelena.com` (sans slash final ; requis pour checkout Stripe et emails)
 - `CLOUDINARY_CLOUD_NAME`
 - `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
+- `CLOUDINARY_API_SECRET` (secret)
+
+**Emails de commande (Resend)**
+
+- `RESEND_API_KEY` (secret)
+- `RESEND_FROM` (ex. `Heaven's By Elena <contact@ton-domaine.com>` — domaine vérifié chez Resend)
+
+Les emails d’inscription (confirmation) passent par **SMTP Supabase** (ex. Brevo), pas par ces variables.
 
 ---
 
@@ -45,6 +54,8 @@ Si les noms diffèrent, modifie wrangler.toml pour qu’ils correspondent.
 2. Le nom du Worker Cloudflare = nom dans wrangler.toml
 3. Les variables d’environnement sont définies
 4. La branche de production est `main`
+5. Santé du déploiement : `GET /api/health` doit répondre `200` avec `{ "ok": true, ... }`
+6. Stripe : webhook `checkout.session.completed` vers `https://TON_DOMAINE/api/webhooks/stripe` + secret copié dans `STRIPE_WEBHOOK_SECRET`
 
 ---
 

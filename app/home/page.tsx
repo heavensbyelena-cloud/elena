@@ -93,9 +93,9 @@ export default async function HomePage() {
       <HeroSection
         heading="Bijoux artisanaux français faits main"
         subheading="Créations uniques par Elena"
-        description="Chaque bijou est façonné à la main avec passion, en acier inoxydable. Colliers, boucles d'oreilles, parures et créations en résine — des pièces artisanales uniques, pensées pour durer et sublimer chaque tenue. Découvrez l'univers Heaven's By Elena, où l'élégance rencontre le savoir-faire artisanal français."
-        imageSrc="https://placehold.co/800x1000/0E0D0B/8FD5D1?text=Heaven%27s"
-        imageAlt="Bijoux artisanaux faits main par Elena — colliers et boucles d'oreilles en acier inoxydable"
+        description="Chaque bijou est façonné à la main avec passion, en acier inoxydable. Colliers, boucles d'oreilles, parures et décoration artisanale — des pièces artisanales uniques, pensées pour durer et sublimer chaque tenue. Découvrez l'univers Heaven's By Elena, où l'élégance rencontre le savoir-faire artisanal français."
+        imageSrc="/hero-elena.png"
+        imageAlt="Elena dans son atelier Heaven's By Elena — création de bijoux artisanaux faits main"
         ctas={[
           { label: 'Découvrir la boutique', href: '/shop', variant: 'primary' },
           { label: 'Nos créations', href: '/shop', variant: 'secondary' },
@@ -110,7 +110,14 @@ export default async function HomePage() {
           {CATEGORIES.map(cat => (
             <Link key={cat.slug} href={`/shop?category=${cat.slug}`} style={{ textAlign: 'center', textDecoration: 'none', color: 'var(--texte)', display: 'block', transition: 'all 0.3s ease' }}>
               <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px', background: 'var(--fond-carte)', position: 'relative', border: '1px solid var(--bordure)', transition: 'all 0.3s ease' }}>
-                <Image src={cat.img} alt={cat.label} fill sizes="300px" style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }} unoptimized={cat.img.includes('placehold.co')} />
+                <Image
+                  src={cat.img}
+                  alt={cat.label}
+                  fill
+                  sizes="300px"
+                  style={{ objectFit: cat.imgObjectFit ?? 'cover', transition: 'transform 0.4s ease' }}
+                  unoptimized={cat.img.includes('placehold.co')}
+                />
               </div>
               <span style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gris)' }}>{cat.label}</span>
             </Link>
@@ -130,7 +137,24 @@ export default async function HomePage() {
       {/* ── NOTRE HISTOIRE ───────────────────────────────── */}
       <section id="histoire" className="section-padding" style={{ background: 'var(--fond)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center' }} className="story-grid">
-          <div style={{ width: '100%', aspectRatio: '4/5', background: "url('https://placehold.co/500x600/0E0D0B/8FD5D1?text=Elena') center/cover no-repeat", borderRadius: '2px', border: '1px solid var(--bordure)' }} role="img" aria-label="Elena créatrice" />
+          <div
+            style={{
+              width: '100%',
+              aspectRatio: '4/5',
+              position: 'relative',
+              borderRadius: '2px',
+              border: '1px solid var(--bordure)',
+              overflow: 'hidden',
+            }}
+          >
+            <Image
+              src="/histoire-elena.png"
+              alt="Elena façonne un collier à la main dans son atelier Heaven's By Elena"
+              fill
+              sizes="(max-width: 968px) 100vw, 500px"
+              style={{ objectFit: 'cover' }}
+            />
+          </div>
           <div>
             <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', fontWeight: 400, letterSpacing: '0.2em', marginBottom: '28px', color: 'var(--texte)' }}>Notre histoire</h2>
             <p style={{ fontSize: '0.95rem', color: 'var(--texte-muted)', lineHeight: 1.8, marginBottom: '16px' }}>

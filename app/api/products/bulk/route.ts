@@ -6,10 +6,10 @@ import { requireAdminApi } from '@/lib/auth';
  * POST /api/products/bulk
  *
  * Action "reassign" : change la catégorie de tous les produits d'un slug vers un autre
- *   { action: 'reassign', from: 'resine-plateaux', to: 'resine-bijoux' }
+ *   { action: 'reassign', from: 'decoration-plateaux', to: 'decoration-bijoux' }
  *
  * Action "delete" : supprime tous les produits d'un slug donné
- *   { action: 'delete', category: 'resine-plateaux' }
+ *   { action: 'delete', category: 'decoration-plateaux' }
  */
 export async function POST(request: NextRequest) {
   try {

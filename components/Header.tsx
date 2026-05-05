@@ -2,16 +2,16 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense, type CSSProperties } from 'react';
 import { useCart } from '@/context/CartContext';
-import { NAV_LEFT, NAV_RIGHT, getResineSubcatLabel } from '@/lib/categories';
+import { NAV_LEFT, NAV_RIGHT, CATEGORIES, getDecorationSubcatLabel } from '@/lib/categories';
 
 interface HeaderProps {
   /** Utilisateur avec session + ligne profiles (getCurrentUser) */
   isLoggedIn?: boolean;
   isAdmin?: boolean;
-  resineSubcats?: string[];
+  decorationSubcats?: string[];
 }
 
 function NavLink({
@@ -58,105 +58,147 @@ function NavLink({
   );
 }
 
-function ResineDropdown({
-  navLabel,
-  dynamicSubcats,
-}: {
-  navLabel: string;
-  dynamicSubcats: string[];
-}) {
+/** Menu boutique desktop : toutes les catégories + sous-rayons décoration (scroll si besoin). */
+function DesktopCategoriesMenuInner({ decorationSubcats }: { decorationSubcats: string[] }) {
   const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const category = pathname === '/shop' ? searchParams.get('category') : null;
 
-  const isActive =
-    pathname === '/shop' &&
-    (typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('category')?.startsWith('resine') ?? false
-      : false);
+  const decoSubs = decorationSubcats.map(slug => ({ slug, label: getDecorationSubcatLabel(slug) }));
 
-  const subcatsToShow = dynamicSubcats.map(slug => ({ slug, label: getResineSubcatLabel(slug) }));
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname, searchParams.toString()]);
+
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [open]);
+
+  const menuBtnStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: category ? 'var(--accent)' : 'var(--texte-muted)',
+    fontSize: '0.75rem',
+    letterSpacing: '0.18em',
+    textTransform: 'uppercase',
+    padding: '4px 0',
+    paddingBottom: '6px',
+    borderBottom: category ? '1px solid var(--accent)' : '1px solid transparent',
+    transition: 'all 0.3s ease',
+    fontFamily: 'inherit',
+    fontWeight: 300,
+  };
+
+  const rowLink = (href: string, label: string, active: boolean, indent = false) => (
+    <Link
+      key={href}
+      href={href}
+      onClick={() => setOpen(false)}
+      role="menuitem"
+      style={{
+        display: 'block',
+        padding: indent ? '6px 24px 6px 36px' : '9px 24px',
+        fontSize: indent ? '0.68rem' : '0.74rem',
+        letterSpacing: '0.06em',
+        textTransform: 'none',
+        color: active ? 'var(--accent)' : 'var(--texte-muted)',
+        textDecoration: 'none',
+        transition: 'color 0.2s ease',
+        borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+      }}
+      onMouseEnter={e => {
+        if (!active) e.currentTarget.style.color = 'var(--accent)';
+      }}
+      onMouseLeave={e => {
+        if (!active) e.currentTarget.style.color = 'var(--texte-muted)';
+      }}
+    >
+      {label}
+    </Link>
+  );
 
   return (
-    <div
-      style={{ position: 'relative' }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <Link
-        href="/shop?category=resine"
-        style={{
-          textDecoration: 'none',
-          color: isActive ? 'var(--accent)' : 'var(--texte-muted)',
-          fontSize: '0.75rem',
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          paddingBottom: '2px',
-          borderBottom: isActive ? '1px solid var(--accent)' : '1px solid transparent',
-          transition: 'all 0.3s ease',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls="desktop-shop-categories-panel"
+        style={menuBtnStyle}
       >
-        {navLabel}
-        <span style={{ fontSize: '0.55rem', opacity: 0.6, marginTop: '1px' }}>▾</span>
-      </Link>
+        Catégories
+        <span style={{ fontSize: '0.55rem', opacity: 0.65 }} aria-hidden>▾</span>
+      </button>
 
-      {open && subcatsToShow.length > 0 && (
+      {open && (
         <div
+          id="desktop-shop-categories-panel"
+          role="menu"
           style={{
             position: 'absolute',
-            top: 'calc(100% + 12px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            top: 'calc(100% + 10px)',
+            left: 0,
             background: 'var(--fond)',
             border: '1px solid var(--bordure)',
-            padding: '16px 0',
-            minWidth: '210px',
-            zIndex: 100,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+            minWidth: 'min(320px, calc(100vw - 48px))',
+            maxWidth: '360px',
+            maxHeight: 'min(70vh, 520px)',
+            overflowY: 'auto',
+            zIndex: 120,
+            boxShadow: '0 16px 40px rgba(0,0,0,0.24)',
           }}
         >
-          <Link
-            href="/shop?category=resine"
-            style={{
-              display: 'block',
-              padding: '8px 24px',
-              fontSize: '0.7rem',
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-              color: 'var(--accent)',
-              textDecoration: 'none',
-              borderBottom: '1px solid var(--bordure)',
-              marginBottom: '8px',
-              paddingBottom: '12px',
-            }}
-          >
-            Tout voir
-          </Link>
-          {subcatsToShow.map(sub => (
-            <Link
-              key={sub.slug}
-              href={`/shop?category=${sub.slug}`}
-              style={{
-                display: 'block',
-                padding: '7px 24px',
-                fontSize: '0.7rem',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: 'var(--texte-muted)',
-                textDecoration: 'none',
-                transition: 'color 0.2s ease',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--texte-muted)')}
-            >
-              {sub.label}
-            </Link>
-          ))}
+          {CATEGORIES.map(cat => {
+            if (cat.slug === 'decoration') {
+              return (
+                <div key={cat.slug} role="presentation">
+                  {rowLink('/shop?category=decoration', 'Décoration — tout voir', category === 'decoration')}
+                  {decoSubs.map(sub =>
+                    rowLink(`/shop?category=${sub.slug}`, sub.label, category === sub.slug, true)
+                  )}
+                </div>
+              );
+            }
+            return rowLink(`/shop?category=${cat.slug}`, cat.label, category === cat.slug);
+          })}
         </div>
       )}
     </div>
+  );
+}
+
+function DesktopCategoriesMenu({ decorationSubcats }: { decorationSubcats: string[] }) {
+  return (
+    <Suspense
+      fallback={
+        <span style={{ fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--texte-muted)', padding: '4px 0' }}>
+          Catégories
+        </span>
+      }
+    >
+      <DesktopCategoriesMenuInner decorationSubcats={decorationSubcats} />
+    </Suspense>
   );
 }
 
@@ -170,7 +212,7 @@ function ResineAccordion({
   onClose: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const subcatsToShow = dynamicSubcats.map(slug => ({ slug, label: getResineSubcatLabel(slug) }));
+  const subcatsToShow = dynamicSubcats.map(slug => ({ slug, label: getDecorationSubcatLabel(slug) }));
 
   return (
     <div style={{ borderTop: '1px solid var(--bordure)' }}>
@@ -197,7 +239,7 @@ function ResineAccordion({
       {open && (
         <div style={{ paddingBottom: '8px', paddingLeft: '16px' }}>
           <Link
-            href="/shop?category=resine"
+            href="/shop?category=decoration"
             onClick={onClose}
             style={{
               display: 'block',
@@ -235,7 +277,7 @@ function ResineAccordion({
   );
 }
 
-export default function Header({ isLoggedIn = false, isAdmin = false, resineSubcats = [] }: HeaderProps) {
+export default function Header({ isLoggedIn = false, isAdmin = false, decorationSubcats = [] }: HeaderProps) {
   const { count, openCart } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -304,9 +346,7 @@ export default function Header({ isLoggedIn = false, isAdmin = false, resineSubc
                 </form>
               )}
               <div style={{ width: '1px', height: '20px', background: 'var(--bordure)', margin: '0 4px' }} />
-              {NAV_LEFT.map(link => (
-                <NavLink key={link.slug} slug={link.slug} navLabel={link.navLabel} />
-              ))}
+              <DesktopCategoriesMenu decorationSubcats={decorationSubcats} />
             </div>
 
             {/* Centre : Logo (fill + boîte = pas d’avertissement width/height Next/Image) */}
@@ -337,15 +377,8 @@ export default function Header({ isLoggedIn = false, isAdmin = false, resineSubc
             </Link>
             <div />
 
-            {/* Droite */}
+            {/* Droite : panier */}
             <div style={{ display: 'flex', gap: '28px', alignItems: 'center', justifyContent: 'flex-end' }}>
-              {NAV_RIGHT.map(link =>
-                link.slug === 'resine' ? (
-                  <ResineDropdown key={link.slug} navLabel={link.navLabel} dynamicSubcats={resineSubcats} />
-                ) : (
-                  <NavLink key={link.slug} slug={link.slug} navLabel={link.navLabel} />
-                )
-              )}
               <div style={{ width: '1px', height: '20px', background: 'var(--bordure)', margin: '0 4px' }} />
               <button onClick={openCart} aria-label="Ouvrir le panier" style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--texte-muted)', padding: 0 }}>
                 🛒
@@ -473,11 +506,11 @@ export default function Header({ isLoggedIn = false, isAdmin = false, resineSubc
             {/* Navigation */}
             <nav style={{ padding: '8px 24px 24px' }}>
               {allNavLinks.map(link =>
-                link.slug === 'resine' ? (
+                link.slug === 'decoration' ? (
                   <ResineAccordion
                     key={link.slug}
                     navLabel={link.navLabel}
-                    dynamicSubcats={resineSubcats}
+                    dynamicSubcats={decorationSubcats}
                     onClose={closeMenu}
                   />
                 ) : (

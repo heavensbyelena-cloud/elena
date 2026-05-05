@@ -7,7 +7,7 @@ import AdminOrderStatus from '@/app/admin/orders/AdminOrderStatus';
 import AdminReviewActions from '@/app/admin/reviews/AdminReviewActions';
 import DeleteResineSubcatModal from '@/components/Admin/DeleteResineSubcatModal';
 import { formatPrice, translateStatus } from '@/lib/utils';
-import { CATEGORIES, getResineSubcatLabel, isResineSlug } from '@/lib/categories';
+import { CATEGORIES, getDecorationSubcatLabel, isDecorationSlug } from '@/lib/categories';
 
 type TabId = 'dashboard' | 'products' | 'orders' | 'reviews';
 
@@ -22,8 +22,8 @@ const ORDER_STATUS_COLORS: Record<string, string> = {
 
 const BASE_CATEGORY_FILTERS: { value: string; label: string }[] = [
   { value: 'all', label: 'Toutes' },
-  ...CATEGORIES.filter(c => c.slug !== 'resine').map(c => ({ value: c.slug, label: c.label })),
-  { value: 'resine', label: 'Création Résine' },
+  ...CATEGORIES.filter(c => c.slug !== 'decoration').map(c => ({ value: c.slug, label: c.label })),
+  { value: 'decoration', label: 'Décoration' },
 ];
 
 const ORDER_STATUS_FILTERS: { value: string; label: string }[] = [
@@ -110,7 +110,7 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [reviewFilter, setReviewFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all');
-  const [resineSubFilter, setResineSubFilter] = useState<string>('all');
+  const [decorationSubFilter, setDecorationSubFilter] = useState<string>('all');
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
   const [deleteModal, setDeleteModal] = useState<{ slug: string; label: string; count: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -122,25 +122,25 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const resineSubcats = useMemo(() => {
+  const decorationSubcats = useMemo(() => {
     const slugs = [...new Set(
-      products.filter(p => p.category.startsWith('resine-')).map(p => p.category)
+      products.filter(p => p.category.startsWith('decoration-')).map(p => p.category)
     )].sort();
-    return slugs.map(slug => ({ slug, label: getResineSubcatLabel(slug) }));
+    return slugs.map(slug => ({ slug, label: getDecorationSubcatLabel(slug) }));
   }, [products]);
 
-  const isResineFilterActive = productCategoryFilter === 'resine';
+  const isDecorationFilterActive = productCategoryFilter === 'decoration';
 
   const filteredReviews = reviews.filter((r) => r.status === reviewFilter);
   const filteredProducts = useMemo(() => {
     if (productCategoryFilter === 'all') return products;
-    if (productCategoryFilter === 'resine') {
-      const resineProducts = products.filter(p => isResineSlug(p.category));
-      if (resineSubFilter === 'all') return resineProducts;
-      return resineProducts.filter(p => p.category === resineSubFilter);
+    if (productCategoryFilter === 'decoration') {
+      const decoProducts = products.filter(p => isDecorationSlug(p.category));
+      if (decorationSubFilter === 'all') return decoProducts;
+      return decoProducts.filter(p => p.category === decorationSubFilter);
     }
     return products.filter(p => p.category === productCategoryFilter);
-  }, [products, productCategoryFilter, resineSubFilter]);
+  }, [products, productCategoryFilter, decorationSubFilter]);
 
   const filteredOrders =
     orderStatusFilter === 'all'
@@ -306,16 +306,16 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
           </div>
 
           {/* Filtres catégorie */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: isResineFilterActive && resineSubcats.length > 0 ? '8px' : '16px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: isDecorationFilterActive && decorationSubcats.length > 0 ? '8px' : '16px' }}>
             {BASE_CATEGORY_FILTERS.map((f) => {
               const active = productCategoryFilter === f.value;
-              const isResineBtn = f.value === 'resine';
-              const resineCount = isResineBtn ? products.filter(p => isResineSlug(p.category)).length : 0;
+              const isDecorationBtn = f.value === 'decoration';
+              const decorationCount = isDecorationBtn ? products.filter(p => isDecorationSlug(p.category)).length : 0;
               return (
                 <button
                   key={f.value}
                   type="button"
-                  onClick={() => { setProductCategoryFilter(f.value); setResineSubFilter('all'); }}
+                  onClick={() => { setProductCategoryFilter(f.value); setDecorationSubFilter('all'); }}
                   style={{
                     padding: isMobile ? '5px 10px' : '6px 14px',
                     fontSize: isMobile ? '0.62rem' : '0.7rem',
@@ -331,9 +331,9 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
                   }}
                 >
                   {f.label}
-                  {isResineBtn && resineCount > 0 && (
+                  {isDecorationBtn && decorationCount > 0 && (
                     <span style={{ fontSize: '0.58rem', background: active ? 'rgba(255,255,255,0.25)' : 'var(--accent)', color: 'var(--blanc)', borderRadius: '10px', padding: '1px 5px', fontWeight: 500 }}>
-                      {resineCount}
+                      {decorationCount}
                     </span>
                   )}
                 </button>
@@ -341,18 +341,18 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
             })}
           </div>
 
-          {/* Sous-filtres résine */}
-          {isResineFilterActive && resineSubcats.length > 0 && (
+          {/* Sous-filtres décoration */}
+          {isDecorationFilterActive && decorationSubcats.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '16px', paddingLeft: '12px', borderLeft: '2px solid var(--accent)' }}>
-              <button type="button" onClick={() => setResineSubFilter('all')} style={{ padding: '3px 10px', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.08em', border: `1px solid ${resineSubFilter === 'all' ? 'var(--accent)' : 'var(--bordure)'}`, background: 'transparent', color: resineSubFilter === 'all' ? 'var(--accent)' : 'var(--gris)', cursor: 'pointer' }}>
+              <button type="button" onClick={() => setDecorationSubFilter('all')} style={{ padding: '3px 10px', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.08em', border: `1px solid ${decorationSubFilter === 'all' ? 'var(--accent)' : 'var(--bordure)'}`, background: 'transparent', color: decorationSubFilter === 'all' ? 'var(--accent)' : 'var(--gris)', cursor: 'pointer' }}>
                 Toutes
               </button>
-              {resineSubcats.map(sub => {
+              {decorationSubcats.map(sub => {
                 const count = products.filter(p => p.category === sub.slug).length;
-                const active = resineSubFilter === sub.slug;
+                const active = decorationSubFilter === sub.slug;
                 return (
                   <div key={sub.slug} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                    <button type="button" onClick={() => setResineSubFilter(sub.slug)} style={{ padding: '3px 10px', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.08em', border: `1px solid ${active ? 'var(--accent)' : 'var(--bordure)'}`, borderRight: 'none', background: 'transparent', color: active ? 'var(--accent)' : 'var(--gris)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button type="button" onClick={() => setDecorationSubFilter(sub.slug)} style={{ padding: '3px 10px', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.08em', border: `1px solid ${active ? 'var(--accent)' : 'var(--bordure)'}`, borderRight: 'none', background: 'transparent', color: active ? 'var(--accent)' : 'var(--gris)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {sub.label} <span style={{ opacity: 0.6 }}>({count})</span>
                     </button>
                     <button type="button" title={`Supprimer "${sub.label}"`} onClick={() => setDeleteModal({ slug: sub.slug, label: sub.label, count })} style={{ padding: '3px 7px', fontSize: '0.62rem', border: `1px solid ${active ? 'var(--accent)' : 'var(--bordure)'}`, background: 'transparent', color: '#c05050', cursor: 'pointer', lineHeight: 1, transition: 'background 0.15s' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(192,80,80,0.08)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
@@ -364,9 +364,9 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
             </div>
           )}
 
-          {isResineFilterActive && resineSubcats.length === 0 && (
+          {isDecorationFilterActive && decorationSubcats.length === 0 && (
             <div style={{ marginBottom: '16px', paddingLeft: '12px', borderLeft: '2px solid var(--bordure)', fontSize: '0.78rem', color: 'var(--gris)', fontStyle: 'italic' }}>
-              Aucun produit résine — créez un produit avec une catégorie <code>resine-xxx</code>.
+              Aucun produit décoration — créez un produit avec une catégorie <code>decoration-xxx</code>.
             </div>
           )}
 
@@ -375,8 +375,8 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
               slug={deleteModal.slug}
               label={deleteModal.label}
               productCount={deleteModal.count}
-              otherSubcats={resineSubcats.filter(s => s.slug !== deleteModal.slug)}
-              onSuccess={() => { setDeleteModal(null); setResineSubFilter('all'); window.location.reload(); }}
+              otherSubcats={decorationSubcats.filter(s => s.slug !== deleteModal.slug)}
+              onSuccess={() => { setDeleteModal(null); setDecorationSubFilter('all'); window.location.reload(); }}
               onClose={() => setDeleteModal(null)}
             />
           )}

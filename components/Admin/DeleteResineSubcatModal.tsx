@@ -3,13 +3,13 @@
 import { useState } from 'react';
 
 interface Props {
-  /** Slug de la sous-catégorie à supprimer (ex: 'resine-plateaux') */
+  /** Slug de la sous-catégorie à supprimer (ex: 'decoration-plateaux') */
   slug: string;
   /** Label affiché (ex: 'Plateaux & Dessous de verre') */
   label: string;
   /** Nombre de produits dans cette sous-catégorie */
   productCount: number;
-  /** Autres sous-catégories résine disponibles pour la réassignation */
+  /** Autres sous-catégories decoration disponibles pour la réassignation */
   otherSubcats: { slug: string; label: string }[];
   /** Appelé après succès pour rafraîchir la page */
   onSuccess: () => void;
@@ -156,7 +156,7 @@ export default function DeleteResineSubcatModal({
                       Réassigner les produits →
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--gris)' }}>
-                      Déplacer les {productCount} produit{productCount > 1 ? 's' : ''} vers une autre sous-catégorie résine
+                      Déplacer les {productCount} produit{productCount > 1 ? 's' : ''} vers une autre sous-catégorie décoration
                     </div>
                   </button>
                 )}

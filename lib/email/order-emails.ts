@@ -1,8 +1,7 @@
 import { formatPrice } from '@/lib/utils';
 import { sendResendEmail } from '@/lib/email/resend';
 import { escapeHtml, orderEmailShell } from '@/lib/email/order-email-layout';
-
-const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || '';
+import { getPublicSiteUrl } from '@/lib/site-url';
 
 type OrderItemRow = {
   product_name?: string;
@@ -49,7 +48,7 @@ export async function sendOrderConfirmationEmail(order: OrderEmailRow): Promise<
   if (!process.env.RESEND_API_KEY) return;
 
   const total = order.total_price ?? order.total ?? 0;
-  const base = siteUrl();
+  const base = getPublicSiteUrl();
   const ref = orderRef(order.id);
   const first = order.customer_name ? escapeHtml(order.customer_name.split(' ')[0] ?? '') : '';
 
@@ -80,7 +79,7 @@ export async function sendOrderConfirmationEmail(order: OrderEmailRow): Promise<
 export async function sendOrderShippedEmail(order: OrderEmailRow): Promise<void> {
   if (!process.env.RESEND_API_KEY) return;
 
-  const base = siteUrl();
+  const base = getPublicSiteUrl();
   const ref = orderRef(order.id);
   const first = order.customer_name ? escapeHtml(order.customer_name.split(' ')[0] ?? '') : '';
   const notes = order.notes?.trim();
@@ -116,7 +115,7 @@ export async function sendOrderShippedEmail(order: OrderEmailRow): Promise<void>
 export async function sendOrderDeliveredEmail(order: OrderEmailRow): Promise<void> {
   if (!process.env.RESEND_API_KEY) return;
 
-  const base = siteUrl();
+  const base = getPublicSiteUrl();
   const ref = orderRef(order.id);
   const first = order.customer_name ? escapeHtml(order.customer_name.split(' ')[0] ?? '') : '';
 
