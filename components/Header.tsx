@@ -360,8 +360,9 @@ export default function Header({ isLoggedIn = false, isAdmin = false, decoration
                 zIndex: 10,
                 textDecoration: 'none',
                 display: 'block',
-                width: 250,
-                height: 250,
+                width: 200,
+                height: 72,
+                lineHeight: 0,
               }}
             >
               <span style={{ position: 'relative', display: 'block', width: '100%', height: '100%' }}>
@@ -369,8 +370,8 @@ export default function Header({ isLoggedIn = false, isAdmin = false, decoration
                   src="/logo.png"
                   alt="Heaven's By Elena"
                   fill
-                  sizes="250px"
-                  style={{ objectFit: 'contain' }}
+                  sizes="200px"
+                  style={{ objectFit: 'contain', objectPosition: 'center' }}
                   priority
                 />
               </span>
@@ -435,8 +436,8 @@ export default function Header({ isLoggedIn = false, isAdmin = false, decoration
             </button>
 
             {/* Centre : Logo */}
-            <Link href="/home" style={{ display: 'block', textDecoration: 'none', width: 120, height: 110, position: 'relative' }}>
-              <Image src="/logo.png" alt="Heaven's By Elena" fill sizes="120px" style={{ objectFit: 'contain' }} priority />
+            <Link href="/home" style={{ display: 'block', textDecoration: 'none', width: 120, height: 52, position: 'relative', lineHeight: 0 }}>
+              <Image src="/logo.png" alt="Heaven's By Elena" fill sizes="120px" style={{ objectFit: 'contain', objectPosition: 'center' }} priority />
             </Link>
 
             {/* Droite : compte + panier */}
@@ -492,8 +493,8 @@ export default function Header({ isLoggedIn = false, isAdmin = false, decoration
           >
             {/* En-tête du panneau */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--bordure)' }}>
-              <Link href="/home" onClick={closeMenu} style={{ textDecoration: 'none', display: 'block', width: 80, height: 70, position: 'relative' }}>
-                <Image src="/logo.png" alt="Heaven's By Elena" fill sizes="80px" style={{ objectFit: 'contain' }} />
+              <Link href="/home" onClick={closeMenu} style={{ textDecoration: 'none', display: 'block', width: 90, height: 48, position: 'relative', lineHeight: 0 }}>
+                <Image src="/logo.png" alt="Heaven's By Elena" fill sizes="90px" style={{ objectFit: 'contain', objectPosition: 'center' }} />
               </Link>
               <button
                 onClick={closeMenu}
