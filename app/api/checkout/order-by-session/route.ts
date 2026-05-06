@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { data: order, error } = await admin
       .from('orders')
       .select(
-        'id, status, total_price, total, customer_email, customer_name, items, promo_code_id, user_id'
+        'id, status, total_price, total, subtotal, shipping_cost, discount_amount, customer_email, customer_name, items, promo_code_id, user_id, shipping_address, created_at'
       )
       .eq('payment_id', sessionId)
       .maybeSingle();
@@ -28,11 +28,16 @@ export async function GET(request: NextRequest) {
       status: string;
       total_price: number | null;
       total?: number | null;
+      subtotal?: number | null;
+      shipping_cost?: number | null;
+      discount_amount?: number | null;
       customer_email: string;
       customer_name?: string | null;
       items: unknown;
       promo_code_id?: string | null;
       user_id?: string | null;
+      shipping_address?: Record<string, unknown> | null;
+      created_at?: string | null;
     };
 
     // Marquer comme payée si ce n'est pas déjà fait (idempotent — une seule fois)
@@ -74,6 +79,11 @@ export async function GET(request: NextRequest) {
         total_price: row.total_price,
         total: row.total,
         items: row.items as OrderEmailRow['items'],
+        shipping_address: row.shipping_address ?? null,
+        subtotal: row.subtotal,
+        shipping_cost: row.shipping_cost,
+        discount_amount: row.discount_amount,
+        created_at: row.created_at,
       });
     }
 

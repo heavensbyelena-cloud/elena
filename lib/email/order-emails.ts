@@ -2,6 +2,7 @@ import { formatPrice } from '@/lib/utils';
 import { sendResendEmail } from '@/lib/email/resend';
 import { escapeHtml, orderEmailShell } from '@/lib/email/order-email-layout';
 import { getPublicSiteUrl } from '@/lib/site-url';
+import { buildOrderInvoicePdf } from '@/lib/pdf/order-invoice-pdf';
 
 type OrderItemRow = {
   product_name?: string;
@@ -18,6 +19,11 @@ export type OrderEmailRow = {
   total?: number | null;
   items?: OrderItemRow[] | Record<string, unknown>[] | null;
   notes?: string | null;
+  shipping_address?: Record<string, unknown> | null;
+  subtotal?: number | null;
+  shipping_cost?: number | null;
+  discount_amount?: number | null;
+  created_at?: string | null;
 };
 
 function itemsHtml(items: OrderEmailRow['items']): string {
@@ -41,6 +47,18 @@ function orderRef(id: string | number): string {
 
 function greeting(nameFirst: string): string {
   return nameFirst ? `Bonjour ${nameFirst},` : 'Bonjour,';
+}
+
+function pdfBytesToBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined' && typeof Buffer.from === 'function') {
+    return Buffer.from(bytes).toString('base64');
+  }
+  const chunk = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as number[]);
+  }
+  return btoa(binary);
 }
 
 /** Après paiement confirmé (page succès Stripe). */
@@ -67,10 +85,24 @@ export async function sendOrderConfirmationEmail(order: OrderEmailRow): Promise<
     ...(base ? { cta: { href: base, label: 'Voir le site' } } : {}),
   });
 
+  let attachments: { filename: string; content: string }[] | undefined;
+  try {
+    const pdf = await buildOrderInvoicePdf(order);
+    attachments = [
+      {
+        filename: `facture-${ref.replace(/[^\w.-]+/g, '_')}.pdf`,
+        content: pdfBytesToBase64(pdf),
+      },
+    ];
+  } catch (e) {
+    console.error('[order-emails] PDF facture:', e instanceof Error ? e.message : e);
+  }
+
   const r = await sendResendEmail({
     to: order.customer_email,
     subject: `Commande #${ref} confirmée — Heaven's By Elena`,
     html,
+    attachments,
   });
   if (!r.ok) console.error('[order-emails] confirmation:', r.error);
 }

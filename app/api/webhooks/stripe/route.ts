@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
 
       const { data: order } = await admin
         .from('orders')
-        .select('id, status, total_price, customer_email, customer_name, items, promo_code_id, user_id')
+        .select(
+          'id, status, total_price, total, subtotal, shipping_cost, discount_amount, customer_email, customer_name, items, promo_code_id, user_id, shipping_address, created_at'
+        )
         .eq('payment_id', session.id)
         .maybeSingle();
 
@@ -54,11 +56,17 @@ export async function POST(request: NextRequest) {
         id: string;
         status: string;
         total_price: number | null;
+        total?: number | null;
+        subtotal?: number | null;
+        shipping_cost?: number | null;
+        discount_amount?: number | null;
         customer_email: string;
         customer_name: string | null;
         items: unknown;
         promo_code_id: string | null;
         user_id: string | null;
+        shipping_address?: Record<string, unknown> | null;
+        created_at?: string | null;
       };
 
       if (row.status !== 'pending') {
@@ -106,7 +114,13 @@ export async function POST(request: NextRequest) {
         customer_email: row.customer_email,
         customer_name: row.customer_name,
         total_price: row.total_price,
+        total: row.total,
         items: row.items as OrderEmailRow['items'],
+        shipping_address: row.shipping_address ?? null,
+        subtotal: row.subtotal,
+        shipping_cost: row.shipping_cost,
+        discount_amount: row.discount_amount,
+        created_at: row.created_at,
       });
 
       devLog('[webhook/stripe] Commande confirmée:', row.id);

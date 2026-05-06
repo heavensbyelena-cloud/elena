@@ -3,10 +3,17 @@
  * https://resend.com/docs/api-reference/emails/send-email
  */
 
+export type ResendAttachment = {
+  filename: string;
+  /** Contenu encodé en base64 */
+  content: string;
+};
+
 export type ResendSendParams = {
   to: string;
   subject: string;
   html: string;
+  attachments?: ResendAttachment[];
 };
 
 export async function sendResendEmail(params: ResendSendParams): Promise<{ ok: boolean; error?: string }> {
@@ -29,6 +36,7 @@ export async function sendResendEmail(params: ResendSendParams): Promise<{ ok: b
         to: [params.to],
         subject: params.subject,
         html: params.html,
+        ...(params.attachments?.length ? { attachments: params.attachments } : {}),
       }),
     });
 
