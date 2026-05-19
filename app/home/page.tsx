@@ -50,7 +50,7 @@ export const metadata: Metadata = {
 
 const ENGAGEMENTS = [
   { icon: '✦', title: 'Fait main en France',             sub: 'Créations artisanales' },
-  { icon: '◇', title: 'Acier inoxydable',                sub: 'Qualité durable' },
+  { icon: '◇', title: 'Matériaux nobles',                sub: 'Qualité durable' },
   { icon: '⬡', title: 'Livraison soignée',               sub: 'Emballage luxueux' },
   { icon: '↺', title: 'Retours 14 jours',                sub: 'Satisfait ou remboursé' },
 ];
@@ -91,11 +91,11 @@ export default async function HomePage() {
 
       {/* ── HERO ─────────────────────────────────────────── */}
       <HeroSection
-        heading="Bijoux artisanaux français faits main en acier inoxydable"
+        heading="Bijoux artisanaux français faits main en matériaux nobles"
         subheading="Créations uniques par Elena"
         description={`Bienvenue dans l'univers de Heaven's by Elena, une boutique en ligne spécialisée dans les bijoux artisanaux faits main. Chaque création est imaginée et fabriquée avec soin, dans une démarche de qualité et d'authenticité.
 
-Nos bijoux en acier inoxydable sont conçus pour durer dans le temps, résister à l'eau et conserver leur éclat. Que vous recherchiez un collier, des boucles d'oreilles, une parure ou un bijou unique, chaque pièce est pensée pour sublimer votre style.
+Nos bijoux en matériaux nobles sont conçus pour durer dans le temps, résister à l'eau et conserver leur éclat. Que vous recherchiez un collier, des boucles d'oreilles, une parure ou un bijou unique, chaque pièce est pensée pour sublimer votre style.
 
 Nos collections de bijoux artisanaux français allient élégance, modernité et savoir-faire. Chaque bijou est une création unique, réalisée à la main avec exigence, pour offrir une touche personnelle et distinctive.
 
@@ -168,10 +168,10 @@ Un monde à part.`}
           <div>
             <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', fontWeight: 400, letterSpacing: '0.2em', marginBottom: '28px', color: 'var(--texte)' }}>Notre histoire</h2>
             <p style={{ fontSize: '0.95rem', color: 'var(--texte-muted)', lineHeight: 1.8, marginBottom: '16px' }}>
-              Elena crée ses bijoux à la main, avec passion et minutie. Chaque pièce est façonnée en acier inoxydable, en série limitée, pour vous offrir des créations durables et élégantes.
+              Elena crée ses bijoux à la main, avec passion et minutie. Chaque pièce est façonnée en matériaux nobles, en série limitée, pour vous offrir des créations durables et élégantes.
             </p>
             <p style={{ fontSize: '0.95rem', color: 'var(--texte-muted)', lineHeight: 1.8 }}>
-              Un acier inoxydable soigné, un savoir-faire artisanal et une attention portée à chaque détail : voilà ce qui fait l&apos;âme de Heaven&apos;s By Elena.
+              Des matériaux nobles soignés, un savoir-faire artisanal et une attention portée à chaque détail : voilà ce qui fait l&apos;âme de Heaven&apos;s By Elena.
             </p>
           </div>
         </div>

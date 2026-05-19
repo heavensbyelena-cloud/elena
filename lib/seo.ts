@@ -13,7 +13,7 @@ export const SEO = {
   home: {
     title: "Heaven's By Elena — Bijoux artisanaux français faits main",
     description:
-      "Découvrez les bijoux artisanaux faits main d'Elena : colliers, boucles d'oreilles, décoration artisanale et accessoires uniques. Chaque pièce est façonnée à la main en France, en acier inoxydable, pour un résultat élégant et durable.",
+      "Découvrez les bijoux artisanaux faits main d'Elena : colliers, boucles d'oreilles, décoration artisanale et accessoires uniques. Chaque pièce est façonnée à la main en France, en matériaux nobles, pour un résultat élégant et durable.",
     keywords: [
       'bijoux artisanaux',
       'bijoux faits main',
@@ -21,7 +21,7 @@ export const SEO = {
       'créations uniques',
       'décoration artisanale',
       'accessoires déco',
-      'acier inoxydable',
+      'matériaux nobles',
       'handmade jewelry',
       'bijoux artisanal France',
       'collier fait main',
