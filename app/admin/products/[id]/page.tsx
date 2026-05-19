@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import type { ProductCategory } from '@/types';
+import type { ProductCategory, ProductMaterial } from '@/types';
+import MaterialPicker from '@/components/Admin/MaterialPicker';
+import { normalizeMaterialsInput } from '@/lib/materials';
 import { CATEGORIES } from '@/lib/categories';
 import { getProductImages } from '@/lib/product-images';
 import ResineSubcatField from '@/components/Admin/ResineSubcatField';
@@ -33,6 +35,7 @@ export default function AdminEditProductPage() {
   const [form, setForm] = useState(initialForm);
   const [imageSlots, setImageSlots] = useState(emptyImageSlots);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<ProductMaterial[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState('');
@@ -72,6 +75,7 @@ export default function AdminEditProductPage() {
           // Pré-sélectionner les badges existants
           const existing = badgeValue.split(' / ').map((b: string) => b.trim()).filter(Boolean);
           setSelectedBadges(existing);
+          setSelectedMaterials(normalizeMaterialsInput(p.materials));
           setImageSlots(slotsFromUrls(getProductImages(p)));
         } else {
           setFetchError('Produit introuvable');
@@ -128,6 +132,7 @@ export default function AdminEditProductPage() {
           ...form,
           image_url: imageUrls[0] ?? form.image_url,
           images: imageUrls,
+          materials: selectedMaterials,
           price: parseFloat(form.price),
           stock: form.stock ? parseInt(form.stock, 10) : null,
         }),
@@ -226,6 +231,8 @@ export default function AdminEditProductPage() {
             </p>
           )}
         </div>
+
+        <MaterialPicker value={selectedMaterials} onChange={setSelectedMaterials} />
 
         <ProductImageSlots slots={imageSlots} onChange={setImageSlots} requiredCount={1} />
 

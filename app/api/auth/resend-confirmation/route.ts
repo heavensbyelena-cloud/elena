@@ -5,22 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAnonAuthClient } from '@/lib/supabase-server';
 import { checkAuthRateLimit } from '@/lib/rate-limit';
-
-function siteUrlFromRequest(request: NextRequest): string {
-  const host =
-    request.headers.get('x-forwarded-host') ?? request.headers.get('host');
-  const proto = request.headers.get('x-forwarded-proto') ?? 'http';
-  const isLocalDev =
-    !!host &&
-    (host.includes('localhost') ||
-      host.startsWith('127.0.0.1') ||
-      /\.local(:\d+)?$/.test(host));
-  if (isLocalDev && host) return `${proto}://${host}`;
-  const env = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (env) return env.replace(/\/$/, '');
-  if (host) return `${proto}://${host}`;
-  return 'http://localhost:3000';
-}
+import { siteUrlFromRequest } from '@/lib/site-url';
 
 export async function POST(request: NextRequest) {
   if (!checkAuthRateLimit(request)) {

@@ -15,14 +15,15 @@
  *
  * Dashboard Supabase : Authentication → URL Configuration (voir aussi
  * supabase/email-templates/BREVO_SMTP_SUPABASE.txt).
- * - Site URL : ex. http://localhost:3000 ou ton domaine
- * - Redirect URLs : inclure http://localhost:3000/** et https://tondomaine/**
+ * - Site URL en production : https://www.heavensbyelena.com (pas localhost)
+ * - Redirect URLs : inclure http://localhost:3000/** et https://www.heavensbyelena.com/**
  */
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import { createAdminClient, createAnonAuthClient } from '@/lib/supabase-server';
 import { checkAuthRateLimit } from '@/lib/rate-limit';
+import { siteUrlFromRequest } from '@/lib/site-url';
 
 type ProfileErr = { message: string; code?: string; hint?: string };
 
@@ -227,28 +228,6 @@ async function syncProfileForNewUserFallback(
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function siteUrlFromRequest(request: NextRequest): string {
-  const host =
-    request.headers.get('x-forwarded-host') ?? request.headers.get('host');
-  const proto = request.headers.get('x-forwarded-proto') ?? 'http';
-
-  /** En local, utiliser l’hôte de la requête pour emailRedirectTo (sinon NEXT_PUBLIC_SITE_URL prod casse les tests). */
-  const isLocalDev =
-    !!host &&
-    (host.includes('localhost') ||
-      host.startsWith('127.0.0.1') ||
-      /\.local(:\d+)?$/.test(host));
-
-  if (isLocalDev && host) {
-    return `${proto}://${host}`;
-  }
-
-  const env = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (env) return env.replace(/\/$/, '');
-  if (host) return `${proto}://${host}`;
-  return 'http://localhost:3000';
 }
 
 function verboseErrors(): boolean {

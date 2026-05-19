@@ -2,8 +2,10 @@
 // CONSTANTES SEO — Heaven's By Elena
 // ============================================================
 
+import { DEFAULT_PUBLIC_SITE_URL } from './site-url';
+
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://heavens-by-elena.com';
+  process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_PUBLIC_SITE_URL;
 
 export const SITE_NAME = "Heaven's By Elena";
 

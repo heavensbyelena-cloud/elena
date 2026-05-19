@@ -6,7 +6,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import ProductGrid from '@/components/Product/ProductGrid';
 import { CATEGORIES, getCategoryBySlug, isDecorationSlug, getDecorationSubcatLabel } from '@/lib/categories';
-import type { Product, ProductCategory } from '@/types';
+import { PRODUCT_MATERIALS, productMatchesMaterials } from '@/lib/materials';
+import type { Product, ProductCategory, ProductMaterial } from '@/types';
 
 const DEFAULT_SEO = {
   title: "Boutique — Heaven's By Elena",
@@ -50,9 +51,9 @@ function ShopPageContent() {
   const adminRequired = searchParams.get('admin_required') === '1';
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [filtered, setFiltered] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActive] = useState<ProductCategory | null>(null);
+  const [activeMaterials, setActiveMaterials] = useState<ProductMaterial[]>([]);
 
   const baseUrl =
     typeof window !== 'undefined'
@@ -63,6 +64,21 @@ function ShopPageContent() {
   const isDecorationActive = activeCategory ? isDecorationSlug(activeCategory) : false;
 
   // Sous-catégories décoration dérivées des produits chargés (100% dynamique)
+  const filtered = useMemo(() => {
+    let list = products;
+    if (activeCategory) {
+      if (activeCategory === 'decoration') {
+        list = list.filter((p) => isDecorationSlug(p.category));
+      } else {
+        list = list.filter((p) => p.category === activeCategory);
+      }
+    }
+    if (activeMaterials.length > 0) {
+      list = list.filter((p) => productMatchesMaterials(p, activeMaterials));
+    }
+    return list;
+  }, [products, activeCategory, activeMaterials]);
+
   const decorationSubcats = useMemo(() => {
     const slugs = [...new Set(
       products.filter(p => p.category.startsWith('decoration-')).map(p => p.category)
@@ -95,11 +111,9 @@ function ShopPageContent() {
       });
 
       setProducts(list);
-      setFiltered(list);
     } catch (err) {
       console.error('[Shop /api/products] Erreur fetch:', err);
       setProducts([]);
-      setFiltered([]);
     } finally {
       setLoading(false);
     }
@@ -107,26 +121,42 @@ function ShopPageContent() {
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
 
-  // Lire le paramètre ?category= depuis l'URL
+  // Lire ?category= et ?materials= depuis l'URL
   useEffect(() => {
+    if (products.length === 0) return;
     const params = new URLSearchParams(window.location.search);
     const cat = params.get('category') as ProductCategory | null;
-    if (cat) filterBy(cat);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (cat) setActive(cat);
+    const mats = params.get('materials');
+    if (mats) {
+      const slugs = mats.split(',').filter((s): s is ProductMaterial =>
+        PRODUCT_MATERIALS.some((m) => m.slug === s)
+      );
+      if (slugs.length) setActiveMaterials(slugs);
+    }
   }, [products]);
 
   function filterBy(cat: ProductCategory | null) {
     setActive(cat);
-    if (!cat) {
-      setFiltered(products);
-    } else if (cat === 'decoration') {
-      // "Tout voir" décoration = parent + sous-catégories decoration-*
-      setFiltered(products.filter(p => isDecorationSlug(p.category)));
-    } else {
-      setFiltered(products.filter(p => p.category === cat));
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  function toggleMaterial(slug: ProductMaterial) {
+    setActiveMaterials((prev) =>
+      prev.includes(slug) ? prev.filter((m) => m !== slug) : [...prev, slug]
+    );
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function clearMaterialFilters() {
+    setActiveMaterials([]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const activeMaterialLabels = useMemo(
+    () => activeMaterials.map((s) => PRODUCT_MATERIALS.find((m) => m.slug === s)?.label).filter(Boolean),
+    [activeMaterials]
+  );
 
   const activeCategoryLabel = useMemo(() => {
     if (!activeCategory) return null;
@@ -187,6 +217,7 @@ function ShopPageContent() {
         <p style={{ fontSize: '0.9rem', color: 'var(--texte-muted)', marginTop: '16px' }}>
           {filtered.length} création{filtered.length > 1 ? 's' : ''}
           {activeCategoryLabel && ` · ${activeCategoryLabel}`}
+          {activeMaterialLabels.length > 0 && ` · ${activeMaterialLabels.join(', ')}`}
         </p>
       </div>
 
@@ -199,6 +230,28 @@ function ShopPageContent() {
             label={cat.label}
             active={activeCategory === cat.slug || (cat.slug === 'decoration' && isDecorationActive)}
             onClick={() => filterBy(cat.slug as ProductCategory)}
+          />
+        ))}
+      </div>
+
+      {/* Filtres — matériaux */}
+      <div style={{ padding: '20px 40px', borderBottom: '1px solid var(--bordure)', display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', background: 'var(--fond)' }}>
+        <span style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--texte-muted)', alignSelf: 'center', marginRight: '4px' }}>
+          Matériau
+        </span>
+        <FilterPill
+          label="Tous"
+          active={activeMaterials.length === 0}
+          onClick={clearMaterialFilters}
+          small
+        />
+        {PRODUCT_MATERIALS.map((mat) => (
+          <FilterPill
+            key={mat.slug}
+            label={mat.label}
+            active={activeMaterials.includes(mat.slug)}
+            onClick={() => toggleMaterial(mat.slug)}
+            small
           />
         ))}
       </div>
@@ -229,9 +282,11 @@ function ShopPageContent() {
         <ProductGrid
           products={filtered}
           loading={loading}
-          emptyMessage={activeCategoryLabel
-            ? `Aucun produit dans "${activeCategoryLabel}" pour le moment.`
-            : 'Aucun produit disponible pour le moment.'}
+          emptyMessage={
+            activeCategoryLabel || activeMaterialLabels.length > 0
+              ? `Aucun produit ne correspond à vos filtres pour le moment.`
+              : 'Aucun produit disponible pour le moment.'
+          }
         />
       </div>
     </div>

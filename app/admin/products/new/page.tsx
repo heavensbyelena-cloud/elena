@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ProductCategory } from '@/types';
+import type { ProductCategory, ProductMaterial } from '@/types';
+import MaterialPicker from '@/components/Admin/MaterialPicker';
 import { CATEGORIES } from '@/lib/categories';
 import ResineSubcatField from '@/components/Admin/ResineSubcatField';
 import ProductImageSlots, { emptyImageSlots, resolveImageUrls } from '@/components/Admin/ProductImageSlots';
@@ -29,6 +30,7 @@ export default function AdminNewProductPage() {
     stock: '',
   });
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<ProductMaterial[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -92,6 +94,7 @@ export default function AdminNewProductPage() {
           ...form,
           image_url: imageUrls[0],
           images: imageUrls,
+          materials: selectedMaterials,
           price: parseFloat(form.price),
           stock: form.stock ? parseInt(form.stock) : null,
         }),
@@ -167,6 +170,8 @@ export default function AdminNewProductPage() {
             </p>
           )}
         </div>
+
+        <MaterialPicker value={selectedMaterials} onChange={setSelectedMaterials} />
 
         <ProductImageSlots slots={imageSlots} onChange={setImageSlots} requiredCount={1} />
 

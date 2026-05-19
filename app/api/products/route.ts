@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
 import { devLog } from '@/lib/dev-log';
 import { normalizeProductImages } from '@/lib/product-images';
-import { insertProductRow } from '@/lib/products-persistence';
+import { normalizeMaterialsInput } from '@/lib/materials';
+import { insertProductRow, isMissingMaterialsColumn } from '@/lib/products-persistence';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,16 +21,24 @@ export async function GET(request: NextRequest) {
     // Utiliser createAdminClient pour la lecture publique : bypass RLS, tous les produits actifs sont visibles.
     // (createServerSupabaseClient + anon peut renvoyer [] si RLS n'autorise pas SELECT aux anonymes.)
     const admin = createAdminClient();
-    let query = admin
-      .from('products')
-      .select('id, name, price, badge, category, image_url, stock, is_active')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const baseSelect = 'id, name, price, badge, category, image_url, stock, is_active';
+    const selectWithMaterials = `${baseSelect}, materials`;
 
-    if (category) query = query.eq('category', category);
+    async function runQuery(fields: string) {
+      let q = admin
+        .from('products')
+        .select(fields)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (category) q = q.eq('category', category);
+      return q;
+    }
 
-    const { data, error } = await query;
+    let { data, error } = await runQuery(selectWithMaterials);
+    if (error && isMissingMaterialsColumn(error)) {
+      ({ data, error } = await runQuery(baseSelect));
+    }
 
     if (error) {
       console.error('[GET /api/products] Erreur Supabase:', {
@@ -57,7 +66,8 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
-    const { name, description, price, category, badge, stock, image_url, images } = body;
+    const { name, description, price, category, badge, stock, image_url, images, materials } = body;
+    const normalizedMaterials = normalizeMaterialsInput(materials);
     const normalized = normalizeProductImages(
       Array.isArray(images) && images.length > 0
         ? images
@@ -95,6 +105,7 @@ export async function POST(request: NextRequest) {
       stock: stock != null && stock !== '' ? parseInt(String(stock), 10) : null,
       image_url: normalized.image_url,
       images: normalized.images.length > 0 ? normalized.images : null,
+      materials: normalizedMaterials,
       is_active: true,
     };
     devLog('[POST /api/products] Payload insert:', payload);

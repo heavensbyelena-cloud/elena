@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
 import { normalizeProductImages } from '@/lib/product-images';
+import { normalizeMaterialsInput } from '@/lib/materials';
 import { updateProductRow } from '@/lib/products-persistence';
 
 interface Params { params: Promise<{ id: string }> }
@@ -42,6 +43,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       stock: body.stock || null,
       image_url: normalized.image_url,
       images: normalized.images.length > 0 ? normalized.images : null,
+      materials: normalizeMaterialsInput(body.materials),
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await updateProductRow(admin, id, payload);

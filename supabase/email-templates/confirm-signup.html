@@ -4,8 +4,9 @@
 
   Sujet suggéré : Confirmez votre compte — Heaven's By Elena
 
-  Image : déployer /public/email-logo.png avec le site pour que
-  {{ .SiteURL }}/email-logo.png fonctionne (voir URL Configuration).
+  Logo : URL HTTPS fixe (GitHub). Ne pas utiliser {{ .SiteURL }}/email-logo.png
+  tant que les PNG du site Cloudflare renvoient une erreur.
+  Même URL que lib/email/brand.ts (EMAIL_LOGO_URL_DEFAULT).
 -->
 <!DOCTYPE html>
 <html lang="fr">
@@ -21,7 +22,7 @@
           <table role="presentation" width="100%" style="max-width:560px;background-color:#0E0D0B;border:1px solid #1A2528;border-radius:12px;overflow:hidden;">
             <tr>
               <td align="center" style="padding:28px 24px 8px 24px;">
-                <img src="{{ .SiteURL }}/email-logo.png" alt="Heaven's By Elena" width="280" style="display:block;max-width:100%;height:auto;border:0;" />
+                <img src="https://raw.githubusercontent.com/heavensbyelena-cloud/elena/main/public/email-logo.png" alt="Heaven's By Elena" width="280" style="display:block;max-width:100%;height:auto;border:0;" />
               </td>
             </tr>
             <tr>

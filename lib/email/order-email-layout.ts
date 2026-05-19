@@ -2,6 +2,8 @@
  * Enveloppe HTML des e-mails commande (charte alignée sur supabase/email-templates/confirm-signup.html).
  */
 
+import { getEmailLogoUrl } from '@/lib/email/brand';
+
 export function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -28,14 +30,12 @@ export type OrderEmailShellOptions = {
 export function orderEmailShell(opts: OrderEmailShellOptions): string {
   const safeHeadline = escapeHtml(opts.headline);
   const base = opts.siteBase.trim();
-  const logoRow =
-    base.length > 0
-      ? `<tr>
+  const logoSrc = getEmailLogoUrl();
+  const logoRow = `<tr>
             <td align="center" style="padding:28px 24px 8px 24px;">
-              <img src="${escapeHtml(`${base}/email-logo.png`)}" alt="Heaven's By Elena" width="280" style="display:block;max-width:100%;height:auto;border:0;" />
+              <img src="${escapeHtml(logoSrc)}" alt="Heaven's By Elena" width="280" style="display:block;max-width:100%;height:auto;border:0;" />
             </td>
-          </tr>`
-      : '';
+          </tr>`;
   const headlinePad = base.length > 0 ? '8px 32px 8px 32px' : '28px 32px 8px 32px';
 
   const ctaBlock = opts.cta

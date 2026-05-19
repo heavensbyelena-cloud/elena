@@ -6,6 +6,7 @@ import ReviewForm from '@/components/Reviews/ReviewForm';
 import AddToCartButton from '@/components/Product/AddToCartButton';
 import ProductGallery from '@/components/Product/ProductGallery';
 import { getProductImages } from '@/lib/product-images';
+import { formatMaterialsList } from '@/lib/materials';
 import type { Product, Review } from '@/types';
 
 interface Props { params: Promise<{ id: string }> }
@@ -114,6 +115,11 @@ export default async function ProductPage({ params }: Props) {
           <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.6rem', marginBottom: '28px', color: 'var(--accent)' }}>
             {fmt(product.price)}
           </p>
+          {formatMaterialsList(product.materials) && (
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--texte-muted)', marginBottom: '20px' }}>
+              {formatMaterialsList(product.materials)}
+            </p>
+          )}
           {/* Description : toujours afficher la section (avec fallback si vide) */}
           <div style={{ marginBottom: '32px' }}>
             <p style={{ fontSize: '0.92rem', color: 'var(--texte-muted)', lineHeight: 1.8 }}>

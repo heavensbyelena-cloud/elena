@@ -39,19 +39,34 @@ Authentication → Email Templates → « Confirm signup ».
 Doc officielle : https://supabase.com/docs/guides/auth/auth-email-templates
 
 
-4) URLs de redirection (inscription + renvoi)
------------------------------------------------
+4) URLs de redirection (inscription + renvoi) — IMPORTANT
+---------------------------------------------------------
 Authentication → URL Configuration.
 
-- Site URL : ex. https://ton-domaine.fr (dev : http://localhost:3000)
+Si « Site URL » reste sur http://localhost:3000, les emails de confirmation
+enverront vers localhost même en production.
+
+- Site URL (production) : https://www.heavensbyelena.com
 - Redirect URLs : inclure au minimum
-  - http://localhost:3000/**
-  - https://ton-domaine.fr/**
+  - http://localhost:3000/**  (développement local uniquement)
+  - https://www.heavensbyelena.com/**
+Côté Cloudflare : variable NEXT_PUBLIC_SITE_URL = https://www.heavensbyelena.com
+(sans slash final).
+
 L’API d’inscription définit emailRedirectTo vers …/account/login (register + resend).
 
 
-5) Vérifications rapides
+5) Logo dans l’email « Confirm signup »
+---------------------------------------
+Le modèle confirm-signup.html utilise une URL d’image HTTPS fixe (GitHub), pas
+{{ .SiteURL }}/email-logo.png (souvent cassé si Site URL = localhost ou assets PNG en 500).
+
+Après modification du HTML : Authentication → Email Templates → Confirm signup → coller
+le fichier confirm-signup.html du dépôt → Save.
+
+
+6) Vérifications rapides
 ------------------------
 - Créer un compte test : recevoir le mail depuis ton expéditeur Brevo ; le lien doit ouvrir
-  la page de connexion et confirmer l’email.
+  la page de connexion et confirmer l’email ; le logo doit s’afficher en haut.
 - Bouton « Renvoyer l’email de confirmation » sur la page inscription : même canal SMTP.
