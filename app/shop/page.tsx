@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Head from 'next/head';
 import Link from 'next/link';
 import ProductGrid from '@/components/Product/ProductGrid';
 import { CATEGORIES, getCategoryBySlug, isDecorationSlug, getDecorationSubcatLabel } from '@/lib/categories';
@@ -81,7 +80,9 @@ function ShopPageContent() {
 
   const decorationSubcats = useMemo(() => {
     const slugs = [...new Set(
-      products.filter(p => p.category.startsWith('decoration-')).map(p => p.category)
+      products
+        .filter((p) => typeof p.category === 'string' && p.category.startsWith('decoration-'))
+        .map((p) => p.category)
     )].sort();
     return slugs.map(slug => ({ slug, label: getDecorationSubcatLabel(slug) }));
   }, [products]);
@@ -167,6 +168,12 @@ function ShopPageContent() {
     return sub?.label ?? getDecorationSubcatLabel(activeCategory);
   }, [activeCategory, decorationSubcats]);
 
+  useEffect(() => {
+    document.title = currentSeo.title;
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', currentSeo.description);
+  }, [currentSeo]);
+
   return (
     <div style={{ minHeight: '80vh', background: 'var(--fond)' }}>
       {adminRequired && (
@@ -180,19 +187,6 @@ function ShopPageContent() {
           </span>
         </div>
       )}
-      <Head>
-        <title>{currentSeo.title}</title>
-        <meta name="description" content={currentSeo.description} />
-        <meta property="og:title" content={currentSeo.title} />
-        <meta property="og:description" content={currentSeo.description} />
-        <meta property="og:type" content="website" />
-        <meta
-          property="og:url"
-          content={activeCategory ? `${baseUrl}/shop?category=${activeCategory}` : `${baseUrl}/shop`}
-        />
-        <meta property="og:image" content={currentSeo.ogImage} />
-      </Head>
-
       {/* Schema.org BreadcrumbList */}
       <script
         type="application/ld+json"

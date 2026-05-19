@@ -35,6 +35,7 @@ export function productMatchesMaterials(
   selected: ProductMaterial[]
 ): boolean {
   if (selected.length === 0) return true;
-  const productMaterials = product.materials ?? [];
+  const raw = product.materials;
+  const productMaterials = Array.isArray(raw) ? raw : [];
   return selected.some((m) => productMaterials.includes(m));
 }
