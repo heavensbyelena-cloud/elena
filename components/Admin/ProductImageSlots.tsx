@@ -102,7 +102,7 @@ export default function ProductImageSlots({ slots, onChange, requiredCount = 1 }
         Photos du produit ({requiredCount} minimum, {MAX_IMAGES} maximum)
       </label>
       <p style={{ fontSize: '0.75rem', color: 'var(--gris)', marginBottom: '12px' }}>
-        JPEG, PNG, WebP ou GIF — max 5 Mo par photo
+        JPEG, PNG, WebP ou GIF — max 15 Mo par photo
       </p>
       <div style={{ display: 'grid', gap: '20px' }}>
         {slots.map((slot, i) => {
