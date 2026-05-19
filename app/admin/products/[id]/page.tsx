@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import type { ProductCategory } from '@/types';
 import { CATEGORIES } from '@/lib/categories';
+import { getProductImages } from '@/lib/product-images';
 import ResineSubcatField from '@/components/Admin/ResineSubcatField';
+import ProductImageSlots, { emptyImageSlots, slotsFromUrls, resolveImageUrls } from '@/components/Admin/ProductImageSlots';
 
 // Catégories parentes uniquement
 const CATS: { slug: string; label: string }[] = CATEGORIES.map(cat => ({
@@ -30,6 +31,7 @@ export default function AdminEditProductPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [form, setForm] = useState(initialForm);
+  const [imageSlots, setImageSlots] = useState(emptyImageSlots);
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -70,6 +72,7 @@ export default function AdminEditProductPage() {
           // Pré-sélectionner les badges existants
           const existing = badgeValue.split(' / ').map((b: string) => b.trim()).filter(Boolean);
           setSelectedBadges(existing);
+          setImageSlots(slotsFromUrls(getProductImages(p)));
         } else {
           setFetchError('Produit introuvable');
         }
@@ -108,15 +111,23 @@ export default function AdminEditProductPage() {
         : 'Nom, prix et catégorie sont requis.');
       return;
     }
+    const hasFirstImage = imageSlots[0].file || imageSlots[0].existingUrl;
+    if (!hasFirstImage) {
+      setError('Veuillez conserver au moins une photo pour le produit.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
+      const imageUrls = await resolveImageUrls(imageSlots);
       const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          image_url: imageUrls[0] ?? form.image_url,
+          images: imageUrls,
           price: parseFloat(form.price),
           stock: form.stock ? parseInt(form.stock, 10) : null,
         }),
@@ -168,7 +179,6 @@ export default function AdminEditProductPage() {
           { key: 'name',      label: 'Nom *',      type: 'text',   placeholder: 'Collier Lumière' },
           { key: 'price',     label: 'Prix (€) *', type: 'number', placeholder: '65.00' },
           { key: 'stock',     label: 'Stock',      type: 'number', placeholder: 'Vide = illimité' },
-          { key: 'image_url', label: 'URL image',  type: 'url',    placeholder: 'https://...' },
         ].map(f => (
           <div key={f.key} style={{ marginBottom: '18px' }}>
             <label className="form-label">{f.label}</label>
@@ -217,6 +227,8 @@ export default function AdminEditProductPage() {
           )}
         </div>
 
+        <ProductImageSlots slots={imageSlots} onChange={setImageSlots} requiredCount={1} />
+
         <div style={{ marginBottom: '18px' }}>
           <label className="form-label">Catégorie *</label>
           <select
@@ -251,28 +263,6 @@ export default function AdminEditProductPage() {
             placeholder="Description du produit…"
           />
         </div>
-
-        {/* Aperçu de l'image actuelle */}
-        {form.image_url ? (
-          <div style={{ marginBottom: '24px' }}>
-            <p className="form-label">Image actuelle</p>
-            <div style={{ position: 'relative', width: 160, height: 160, background: 'var(--accent-clair)', overflow: 'hidden', border: '1px solid var(--bordure)' }}>
-              <Image
-                src={form.image_url}
-                alt="Aperçu"
-                fill
-                style={{ objectFit: 'cover' }}
-                sizes="160px"
-                unoptimized={form.image_url.startsWith('https://res.cloudinary.com')}
-              />
-            </div>
-          </div>
-        ) : (
-          <div style={{ marginBottom: '24px' }}>
-            <p className="form-label">Image actuelle</p>
-            <p style={{ fontSize: '0.85rem', color: 'var(--gris)' }}>Aucune image</p>
-          </div>
-        )}
 
         {error && (
           <p style={{ color: '#c05050', fontSize: '0.85rem', marginBottom: '16px' }}>{error}</p>

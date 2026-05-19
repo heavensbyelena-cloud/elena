@@ -112,6 +112,7 @@ export default function HeroSection({
               lineHeight: 1.85,
               maxWidth: '420px',
               marginBottom: '40px',
+              whiteSpace: 'pre-line',
             }}
           >
             {description}

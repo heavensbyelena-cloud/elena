@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
+import { normalizeProductImages } from '@/lib/product-images';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -23,11 +24,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
+    const normalized = normalizeProductImages(
+      Array.isArray(body.images) && body.images.length > 0
+        ? body.images
+        : body.image_url
+          ? [body.image_url]
+          : []
+    );
     const admin = createAdminClient();
     const { data, error } = await admin.from('products').update({
       name: body.name, description: body.description, price: parseFloat(body.price),
       category: body.category, badge: body.badge || null, stock: body.stock || null,
-      image_url: body.image_url || null, updated_at: new Date().toISOString(),
+      image_url: normalized.image_url,
+      images: normalized.images.length > 0 ? normalized.images : null,
+      updated_at: new Date().toISOString(),
     }).eq('id', id).select().single();
 
     if (error) throw error;

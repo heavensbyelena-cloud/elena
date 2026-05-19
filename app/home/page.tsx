@@ -91,9 +91,19 @@ export default async function HomePage() {
 
       {/* ── HERO ─────────────────────────────────────────── */}
       <HeroSection
-        heading="Bijoux artisanaux français faits main"
+        heading="Bijoux artisanaux français faits main en acier inoxydable"
         subheading="Créations uniques par Elena"
-        description="Chaque bijou est façonné à la main avec passion, en acier inoxydable. Colliers, boucles d'oreilles, parures et décoration artisanale — des pièces artisanales uniques, pensées pour durer et sublimer chaque tenue. Découvrez l'univers Heaven's By Elena, où l'élégance rencontre le savoir-faire artisanal français."
+        description={`Bienvenue dans l'univers de Heaven's by Elena, une boutique en ligne spécialisée dans les bijoux artisanaux faits main. Chaque création est imaginée et fabriquée avec soin, dans une démarche de qualité et d'authenticité.
+
+Nos bijoux en acier inoxydable sont conçus pour durer dans le temps, résister à l'eau et conserver leur éclat. Que vous recherchiez un collier, des boucles d'oreilles, une parure ou un bijou unique, chaque pièce est pensée pour sublimer votre style.
+
+Nos collections de bijoux artisanaux français allient élégance, modernité et savoir-faire. Chaque bijou est une création unique, réalisée à la main avec exigence, pour offrir une touche personnelle et distinctive.
+
+En choisissant Heaven's by Elena, vous optez pour des bijoux faits main, durables et intemporels, adaptés à toutes les occasions.
+
+Entrez dans un univers où chaque détail compte.
+
+Un monde à part.`}
         imageSrc="/hero-elena.png"
         imageAlt="Elena dans son atelier Heaven's By Elena — création de bijoux artisanaux faits main"
         ctas={[

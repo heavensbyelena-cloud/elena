@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import { createAdminClient } from '@/lib/supabase-server';
 import ReviewList from '@/components/Reviews/ReviewList';
 import ReviewForm from '@/components/Reviews/ReviewForm';
 import AddToCartButton from '@/components/Product/AddToCartButton';
+import ProductGallery from '@/components/Product/ProductGallery';
+import { getProductImages } from '@/lib/product-images';
 import type { Product, Review } from '@/types';
 
 interface Props { params: Promise<{ id: string }> }
@@ -66,6 +67,7 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const { reviews, avg } = await getReviews(id);
+  const galleryImages = getProductImages(product);
 
   console.log('[product/[id]] Page — product.description:', product.description, '| type:', typeof product.description, '| truthy:', !!product.description);
 
@@ -74,7 +76,7 @@ export default async function ProductPage({ params }: Props) {
     '@type': 'Product',
     name: product.name,
     description: product.description ?? '',
-    image: product.image_url,
+    image: getProductImages(product),
     offers: { '@type': 'Offer', price: product.price, priceCurrency: 'EUR', availability: 'https://schema.org/InStock' },
     ...(reviews.length > 0 && {
       aggregateRating: { '@type': 'AggregateRating', ratingValue: avg.toFixed(1), reviewCount: reviews.length },
@@ -97,18 +99,7 @@ export default async function ProductPage({ params }: Props) {
       {/* ── Produit ── */}
       <section style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', maxWidth: '1200px', margin: '0 auto', alignItems: 'start', background: 'var(--fond)' }} className="product-detail-grid">
 
-        {/* Image */}
-        <div style={{ position: 'relative', aspectRatio: '1', background: 'var(--fond-carte)', overflow: 'hidden', border: '1px solid var(--bordure)' }}>
-          {product.badge && <span className="product-badge">{product.badge}</span>}
-          <Image
-            src={product.image_url || 'https://placehold.co/600x600/1A1A1A/2DA89D?text=Bijou'}
-            alt={product.name}
-            fill
-            style={{ objectFit: 'cover' }}
-            priority
-            sizes="(max-width:768px) 100vw, 50vw"
-          />
-        </div>
+        <ProductGallery images={galleryImages} alt={product.name} badge={product.badge} />
 
         {/* Infos */}
         <div style={{ paddingTop: '20px' }}>

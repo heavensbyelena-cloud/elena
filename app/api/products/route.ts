@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
 import { devLog } from '@/lib/dev-log';
+import { normalizeProductImages } from '@/lib/product-images';
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,7 +56,14 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
-    const { name, description, price, category, badge, stock, image_url } = body;
+    const { name, description, price, category, badge, stock, image_url, images } = body;
+    const normalized = normalizeProductImages(
+      Array.isArray(images) && images.length > 0
+        ? images
+        : image_url
+          ? [image_url]
+          : []
+    );
 
     devLog('[POST /api/products] Données reçues:', {
       name,
@@ -84,7 +92,8 @@ export async function POST(request: NextRequest) {
       category,
       badge: badge || null,
       stock: stock != null && stock !== '' ? parseInt(String(stock), 10) : null,
-      image_url: image_url || null,
+      image_url: normalized.image_url,
+      images: normalized.images.length > 0 ? normalized.images : null,
       is_active: true,
     };
     devLog('[POST /api/products] Payload insert:', payload);

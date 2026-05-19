@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ProductCategory } from '@/types';
 import { CATEGORIES } from '@/lib/categories';
 import ResineSubcatField from '@/components/Admin/ResineSubcatField';
+import ProductImageSlots, { emptyImageSlots, resolveImageUrls } from '@/components/Admin/ProductImageSlots';
 
 // Catégories parentes uniquement (pas les sous-catégories decoration-* — gérées séparément)
 const CATS: { slug: string; label: string }[] = CATEGORIES.map(cat => ({
@@ -18,7 +19,7 @@ const BADGES: string[] = ['Fait main', 'Nouveau', 'Best-seller', 'Pièce unique'
 
 export default function AdminNewProductPage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageSlots, setImageSlots] = useState(emptyImageSlots);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -28,8 +29,6 @@ export default function AdminNewProductPage() {
     stock: '',
   });
   const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,38 +48,6 @@ export default function AdminNewProductPage() {
   function update(k: string, v: string) {
     setForm((prev) => ({ ...prev, [k]: v }));
   }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setImageFile(null);
-      setImagePreviewUrl(null);
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      setError('Veuillez sélectionner une image (JPEG, PNG, WebP, GIF).');
-      setImageFile(null);
-      setImagePreviewUrl(null);
-      return;
-    }
-    setError('');
-    setImageFile(file);
-    const url = URL.createObjectURL(file);
-    setImagePreviewUrl(url);
-  }
-
-  function clearImage() {
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
-    setImageFile(null);
-    setImagePreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }
-
-  useEffect(() => {
-    return () => {
-      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
-    };
-  }, [imagePreviewUrl]);
 
   function toggleBadge(badge: string) {
     setSelectedBadges((prev) => {
@@ -103,31 +70,27 @@ export default function AdminNewProductPage() {
         : 'Nom, prix et catégorie sont requis.');
       return;
     }
-    if (!imageFile) {
-      setError('Veuillez sélectionner une photo pour le produit.');
+    const hasFirstImage = imageSlots[0].file || imageSlots[0].existingUrl;
+    if (!hasFirstImage) {
+      setError('Veuillez ajouter au moins une photo pour le produit.');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const formData = new FormData();
-      formData.append('file', imageFile);
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!uploadRes.ok) {
-        const data = await uploadRes.json().catch(() => ({}));
-        throw new Error(data.error || 'Échec de l\'upload de l\'image.');
+      const imageUrls = await resolveImageUrls(imageSlots);
+      if (imageUrls.length === 0) {
+        setError('Veuillez ajouter au moins une photo pour le produit.');
+        return;
       }
-      const { url } = await uploadRes.json();
 
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          image_url: url,
+          image_url: imageUrls[0],
+          images: imageUrls,
           price: parseFloat(form.price),
           stock: form.stock ? parseInt(form.stock) : null,
         }),
@@ -201,30 +164,7 @@ export default function AdminNewProductPage() {
           )}
         </div>
 
-        <div style={{ marginBottom: '18px' }}>
-          <label className="form-label">Photo du produit *</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="form-input"
-            style={{ padding: '10px' }}
-          />
-          <p style={{ fontSize: '0.75rem', color: 'var(--gris)', marginTop: '6px' }}>JPEG, PNG, WebP ou GIF — max 5 Mo</p>
-        </div>
-
-        {imagePreviewUrl && (
-          <div style={{ marginBottom: '24px' }}>
-            <p className="form-label">Aperçu</p>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
-              <img src={imagePreviewUrl} alt="Aperçu" style={{ width: '160px', height: '160px', objectFit: 'cover', background: 'var(--accent-clair)', border: '1px solid var(--bordure)' }} />
-              <button type="button" onClick={clearImage} style={{ padding: '8px 16px', fontSize: '0.75rem', background: 'transparent', border: '1px solid var(--bordure)', color: 'var(--gris)', cursor: 'pointer' }}>
-                Changer l&apos;image
-              </button>
-            </div>
-          </div>
-        )}
+        <ProductImageSlots slots={imageSlots} onChange={setImageSlots} requiredCount={1} />
 
         <div style={{ marginBottom: '18px' }}>
           <label className="form-label">Catégorie *</label>

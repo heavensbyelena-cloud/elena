@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import type { Product } from '@/types';
+import { getPrimaryImageUrl } from '@/lib/product-images';
 
 function fmt(n: number) {
   return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
@@ -13,6 +14,7 @@ function fmt(n: number) {
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const { showToast } = useToast();
+  const thumbUrl = getPrimaryImageUrl(product);
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
@@ -20,7 +22,7 @@ export default function ProductCard({ product }: { product: Product }) {
       id: String(product.id),
       name: product.name,
       price: product.price,
-      image_url: product.image_url || '',
+      image_url: thumbUrl,
     });
     showToast(`${product.name} ajouté au panier ✦`);
   }
@@ -30,14 +32,14 @@ export default function ProductCard({ product }: { product: Product }) {
       <Link href={`/product/${product.id}`}>
         <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden', background: 'var(--fond-carte)', position: 'relative' }}>
           <Image
-            src={product.image_url || 'https://placehold.co/400x400/1A1A1A/2DA89D?text=Bijou'}
+            src={thumbUrl || 'https://placehold.co/400x400/1A1A1A/2DA89D?text=Bijou'}
             alt={product.name}
             fill
             style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
             onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
             sizes="(max-width:768px) 50vw, 25vw"
-            unoptimized={!product.image_url || product.image_url.includes('placehold.co')}
+            unoptimized={!thumbUrl || thumbUrl.includes('placehold.co')}
           />
         </div>
       </Link>
