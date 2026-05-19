@@ -29,9 +29,14 @@ export function slotsFromUrls(urls: string[]): ImageSlot[] {
 async function uploadFile(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
-  const res = await fetch('/api/upload', { method: 'POST', body: formData });
+  const res = await fetch('/api/upload', { method: 'POST', credentials: 'include', body: formData });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
+    if (res.status === 413) {
+      throw new Error(
+        'Photo trop lourde pour le serveur (max ~4,5 Mo en ligne). Réduisez la taille du fichier ou compressez-la.'
+      );
+    }
     throw new Error(data.error || "Échec de l'upload de l'image.");
   }
   const { url } = await res.json();

@@ -32,9 +32,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url, public_id });
   } catch (err) {
     console.error('[upload]', err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Erreur lors de l\'upload' },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : 'Erreur lors de l\'upload';
+    const status = message.toLowerCase().includes('body') || message.toLowerCase().includes('limit') ? 413 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

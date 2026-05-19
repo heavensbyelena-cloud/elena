@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
 import { devLog } from '@/lib/dev-log';
 import { normalizeProductImages } from '@/lib/product-images';
+import { insertProductRow } from '@/lib/products-persistence';
 
 export async function GET(request: NextRequest) {
   try {
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
     };
     devLog('[POST /api/products] Payload insert:', payload);
 
-    const { data, error } = await admin.from('products').insert([payload]).select().single();
+    const { data, error } = await insertProductRow(admin, payload);
 
     if (error) {
       console.error('[POST /api/products] Erreur Supabase:', {
@@ -107,7 +108,13 @@ export async function POST(request: NextRequest) {
         details: error.details,
         hint: error.hint,
       });
-      throw error;
+      return NextResponse.json(
+        {
+          error: 'Impossible d\'enregistrer le produit',
+          debug: error.message,
+        },
+        { status: 500 }
+      );
     }
     return NextResponse.json({ product: data }, { status: 201 });
   } catch (err) {
@@ -115,9 +122,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Erreur serveur',
-        ...(process.env.NODE_ENV === 'development'
-          ? { debug: err instanceof Error ? err.message : String(err) }
-          : {}),
+        debug: err instanceof Error ? err.message : String(err),
       },
       { status: 500 }
     );

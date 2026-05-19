@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
 import { normalizeProductImages } from '@/lib/product-images';
+import { updateProductRow } from '@/lib/products-persistence';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -32,18 +33,34 @@ export async function PUT(request: NextRequest, { params }: Params) {
           : []
     );
     const admin = createAdminClient();
-    const { data, error } = await admin.from('products').update({
-      name: body.name, description: body.description, price: parseFloat(body.price),
-      category: body.category, badge: body.badge || null, stock: body.stock || null,
+    const payload = {
+      name: body.name,
+      description: body.description,
+      price: parseFloat(body.price),
+      category: body.category,
+      badge: body.badge || null,
+      stock: body.stock || null,
       image_url: normalized.image_url,
       images: normalized.images.length > 0 ? normalized.images : null,
       updated_at: new Date().toISOString(),
-    }).eq('id', id).select().single();
+    };
+    const { data, error } = await updateProductRow(admin, id, payload);
 
-    if (error) throw error;
+    if (error) {
+      return NextResponse.json(
+        { error: 'Impossible de mettre à jour le produit', debug: error.message },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ product: data });
-  } catch {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error: 'Erreur serveur',
+        debug: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 }
+    );
   }
 }
 

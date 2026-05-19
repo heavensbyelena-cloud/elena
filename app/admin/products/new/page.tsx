@@ -86,6 +86,7 @@ export default function AdminNewProductPage() {
 
       const res = await fetch('/api/products', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
@@ -95,7 +96,10 @@ export default function AdminNewProductPage() {
           stock: form.stock ? parseInt(form.stock) : null,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.debug || data.error || 'Erreur lors de la création du produit.');
+      }
       router.push('/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la création du produit.');
