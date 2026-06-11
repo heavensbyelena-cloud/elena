@@ -300,7 +300,10 @@ export default function CheckoutPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Erreur lors de la création du paiement');
+      if (!res.ok) {
+        const extra = typeof data.details === 'string' ? ` (${data.details})` : '';
+        throw new Error((data.error || 'Erreur lors de la création du paiement') + extra);
+      }
       if (!data.url || typeof data.url !== 'string') throw new Error('URL Stripe manquante');
       window.location.href = data.url;
     } catch (err) {

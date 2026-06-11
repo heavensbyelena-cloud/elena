@@ -5,6 +5,13 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { devLog } from '@/lib/dev-log';
 import { checkProductionSiteUrl, getPublicSiteUrl } from '@/lib/site-url';
 import { normalizeProductId } from '@/lib/utils';
+import {
+  checkoutErrorResponse,
+  createStripeCheckoutSession,
+  lineItemsTotalCents,
+  stripeProductImages,
+  stripePaymentErrorMessage,
+} from '@/lib/stripe-checkout';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -261,9 +268,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    } as unknown as ConstructorParameters<typeof Stripe>[1]);
+    if (computedTotal > 0 && computedTotal < 0.5) {
+      return NextResponse.json(
+        { error: 'Montant trop faible pour un paiement par carte (minimum 0,50 €).' },
+        { status: 400 }
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey);
 
     // line_items Stripe construits avec les prix de la base de données (pas ceux du client)
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = (items as Array<{ id: unknown; qty: number }>).map(
@@ -274,7 +286,7 @@ export async function POST(request: NextRequest) {
             currency: 'eur',
             product_data: {
               name: dbProduct.name,
-              images: dbProduct.image_url ? [dbProduct.image_url] : undefined,
+              images: stripeProductImages(dbProduct.image_url),
             },
             unit_amount: Math.round(dbProduct.price * 100),
           },
@@ -299,8 +311,17 @@ export async function POST(request: NextRequest) {
     /** Stripe exige unit_amount ≥ 0 ; un coupon ponctuel applique la remise sur la session. */
     let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
     if (promoId && discount > 0) {
+      const itemsTotalCents = lineItemsTotalCents(line_items);
+      const discountCents = Math.round(discount * 100);
+      if (discountCents >= itemsTotalCents) {
+        return NextResponse.json(
+          { error: 'La remise promo est trop élevée pour cette commande.' },
+          { status: 400 }
+        );
+      }
+
       const coupon = await stripe.coupons.create({
-        amount_off: Math.round(discount * 100),
+        amount_off: discountCents,
         currency: 'eur',
         duration: 'once',
         name: 'Code promo',
@@ -308,23 +329,26 @@ export async function POST(request: NextRequest) {
       discounts = [{ coupon: coupon.id }];
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items,
-      ...(discounts && discounts.length > 0 ? { discounts } : {}),
-      customer_email: customer_email.trim(),
-      metadata: {
-        customer_name:    (customer_name || '').slice(0, 500),
-        shipping_address: JSON.stringify(shipping_address).slice(0, 500),
-        shipping_method:  method,
-        pickup_point:     pickup_point ? JSON.stringify(pickup_point).slice(0, 500) : '',
-        promo_id:         promoId ?? '',
-        discount_amount:  String(discount),
+    const session = await createStripeCheckoutSession(
+      stripe,
+      {
+        mode: 'payment',
+        payment_method_types: ['card'],
+        ...(discounts && discounts.length > 0 ? { discounts } : {}),
+        customer_email: customer_email.trim(),
+        metadata: {
+          customer_name: (customer_name || '').slice(0, 500),
+          shipping_address: JSON.stringify(shipping_address ?? {}).slice(0, 500),
+          shipping_method: method,
+          pickup_point: pickup_point ? JSON.stringify(pickup_point).slice(0, 500) : '',
+          promo_id: promoId ?? '',
+          discount_amount: String(discount),
+        },
+        success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteUrl}/checkout`,
       },
-      success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/checkout`,
-    });
+      line_items
+    );
 
     if (!session.id || !session.url) {
       console.error('[create-session] Session sans id ou url');
@@ -349,13 +373,13 @@ export async function POST(request: NextRequest) {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).from('orders').insert([
+    const { error: orderError } = await (admin as any).from('orders').insert([
       {
         user_id:         user?.id ?? null,
         customer_email:  customer_email.trim(),
         customer_name:   customer_name ?? null,
         items:           orderItems,
-        shipping_address,
+        shipping_address: shipping_address ?? {},
         shipping_method: method,
         pickup_point:    method === 'point_relay' ? (pickup_point ?? null) : null,
         subtotal:        subtotal ?? computedSubtotal,
@@ -368,13 +392,24 @@ export async function POST(request: NextRequest) {
       },
     ]);
 
+    if (orderError) {
+      console.error('[create-session] order insert:', orderError.message, orderError.code, orderError.details);
+      return NextResponse.json(
+        {
+          error: stripePaymentErrorMessage(orderError),
+          ...(process.env.CHECKOUT_VERBOSE_ERRORS === '1'
+            ? { details: orderError.message, code: orderError.code }
+            : {}),
+        },
+        { status: 500 }
+      );
+    }
+
     devLog('[create-session] Commande pending créée, retour url + sessionId');
     return NextResponse.json({ url: session.url, sessionId: session.id });
   } catch (err) {
     console.error('[create-session] Erreur:', err instanceof Error ? err.message : err);
-    return NextResponse.json(
-      { error: 'Erreur lors de la création du paiement' },
-      { status: 500 }
-    );
+    const body = checkoutErrorResponse(err);
+    return NextResponse.json(body, { status: 500 });
   }
 }
