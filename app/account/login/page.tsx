@@ -1,19 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
-  const router = useRouter();
+const ERROR_MESSAGES: Record<string, string> = {
+  confirmation:
+    'Le lien de confirmation est invalide ou expiré. Connectez-vous ou demandez un nouvel email depuis la page d’inscription.',
+};
+
+function LoginContent() {
+  const searchParams = useSearchParams();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
+  const [info,     setInfo]     = useState('');
+
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      const next = searchParams.get('redirect') ?? '/account/dashboard';
+      const callback = new URL('/auth/confirm', window.location.origin);
+      callback.searchParams.set('code', code);
+      callback.searchParams.set('next', next);
+      window.location.replace(callback.toString());
+      return;
+    }
+
+    if (searchParams.get('confirmed') === '1') {
+      setInfo('Votre adresse e-mail est confirmée. Vous pouvez vous connecter.');
+      return;
+    }
+
+    const errKey = searchParams.get('error');
+    if (errKey && ERROR_MESSAGES[errKey]) {
+      setError(ERROR_MESSAGES[errKey]);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setInfo('');
     if (!email || !password) { setError('Veuillez remplir tous les champs.'); return; }
 
     setLoading(true);
@@ -28,9 +57,8 @@ export default function LoginPage() {
       if (!res.ok) {
         throw new Error(data.error || 'Connexion impossible');
       }
-      const redirectTo = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null;
+      const redirectTo = searchParams.get('redirect');
       const target = redirectTo || '/account/dashboard';
-      // Délai pour laisser le navigateur enregistrer le cookie avant la redirection
       await new Promise(r => setTimeout(r, 300));
       window.location.href = target;
     } catch (err: unknown) {
@@ -68,6 +96,7 @@ export default function LoginPage() {
             </span>
           </div>
 
+          {info && <p style={{ color: '#3a7a6a', fontSize: '0.85rem', marginBottom: '16px', textAlign: 'center' }}>{info}</p>}
           {error && <p style={{ color: '#c05050', fontSize: '0.85rem', marginBottom: '16px', textAlign: 'center' }}>{error}</p>}
 
           <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', padding: '14px', opacity: loading ? 0.7 : 1 }}>
@@ -83,5 +112,17 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', background: 'var(--fond-casse)' }}>
+        <p style={{ color: 'var(--gris)' }}>Chargement…</p>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -5,19 +5,10 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-
-/** N'autorise que des chemins relatifs du site (évite l'open redirect). */
-function safeRedirectPath(raw: string | null): string {
-  if (!raw || typeof raw !== 'string') return '/admin';
-  const trimmed = raw.trim();
-  if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !/^\/[a-z]+:/i.test(trimmed)) {
-    return trimmed;
-  }
-  return '/admin';
-}
+import { safeRedirectPath } from '@/lib/safe-redirect';
 
 export async function GET(request: NextRequest) {
-  const then = safeRedirectPath(request.nextUrl.searchParams.get('then'));
+  const then = safeRedirectPath(request.nextUrl.searchParams.get('then'), '/admin');
 
   try {
     const user = await getCurrentUser();

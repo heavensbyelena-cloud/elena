@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       type: 'signup',
       email,
       options: {
-        emailRedirectTo: `${origin}/account/login`,
+        emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent('/account/dashboard')}`,
       },
     });
 

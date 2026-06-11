@@ -17,6 +17,7 @@
  * supabase/email-templates/BREVO_SMTP_SUPABASE.txt).
  * - Site URL en production : https://www.heavensbyelena.com (pas localhost)
  * - Redirect URLs : inclure http://localhost:3000/** et https://www.heavensbyelena.com/**
+ *   (notamment /auth/callback pour la confirmation d’email)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -415,7 +416,7 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = siteUrlFromRequest(request);
-    const emailRedirectTo = `${origin}/account/login`;
+    const emailRedirectTo = `${origin}/auth/confirm?next=${encodeURIComponent('/account/dashboard')}`;
     if (process.env.NODE_ENV === 'development') {
       console.info('[register] emailRedirectTo =', emailRedirectTo);
     }

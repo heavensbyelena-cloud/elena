@@ -61,6 +61,16 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('email not confirmed') || msg.includes('not confirmed')) {
+        return NextResponse.json(
+          {
+            error:
+              'Votre adresse e-mail n’est pas encore confirmée. Vérifiez votre boîte mail (et les spams) ou créez un nouveau compte pour renvoyer le lien.',
+          },
+          { status: 401 }
+        );
+      }
       return NextResponse.json(
         { error: 'Identifiants incorrects' },
         { status: 401 }

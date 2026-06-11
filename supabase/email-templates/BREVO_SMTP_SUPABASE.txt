@@ -53,7 +53,8 @@ enverront vers localhost même en production.
 Côté Cloudflare : variable NEXT_PUBLIC_SITE_URL = https://www.heavensbyelena.com
 (sans slash final).
 
-L’API d’inscription définit emailRedirectTo vers …/account/login (register + resend).
+L’API d’inscription définit emailRedirectTo vers …/auth/callback (register + resend).
+Le callback échange le code Supabase et connecte l’utilisateur.
 
 
 5) Logo dans l’email « Confirm signup »
