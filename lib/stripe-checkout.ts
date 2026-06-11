@@ -43,6 +43,9 @@ export function stripePaymentErrorMessage(err: unknown): string {
     if (err.code === 'email_invalid') {
       return 'Adresse e-mail invalide. Vérifiez votre email.';
     }
+    if (err.type === 'StripeConnectionError') {
+      return 'Connexion à Stripe impossible. Réessayez dans quelques instants.';
+    }
     if (isStripeImageError(err)) {
       return 'Le paiement n’a pas pu démarrer (image produit). Réessayez.';
     }

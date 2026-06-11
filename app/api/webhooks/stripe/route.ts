@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase-server';
 import { sendOrderConfirmationEmail, type OrderEmailRow } from '@/lib/email/order-emails';
 import { devLog } from '@/lib/dev-log';
+import { getStripeClient, stripeWebCrypto } from '@/lib/stripe-server';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -23,11 +24,14 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    } as unknown as ConstructorParameters<typeof Stripe>[1]);
-
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const stripe = getStripeClient();
+    event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      webhookSecret,
+      undefined,
+      stripeWebCrypto
+    );
   } catch (err) {
     console.error('[webhook/stripe] Signature invalide:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Signature invalide' }, { status: 400 });

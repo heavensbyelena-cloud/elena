@@ -12,6 +12,7 @@ import {
   stripeProductImages,
   stripePaymentErrorMessage,
 } from '@/lib/stripe-checkout';
+import { getStripeClient } from '@/lib/stripe-server';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 
@@ -275,7 +276,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripe = new Stripe(stripeSecretKey);
+    const stripe = getStripeClient();
 
     // line_items Stripe construits avec les prix de la base de données (pas ceux du client)
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = (items as Array<{ id: unknown; qty: number }>).map(
