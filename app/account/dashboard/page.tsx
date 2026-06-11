@@ -120,7 +120,7 @@ export default async function DashboardPage() {
                       marginBottom: '4px',
                     }}
                   >
-                    COMMANDE #{(order.id ? order.id.slice(0, 8) : 'N/A').toUpperCase()}
+                    COMMANDE #{(order.id != null ? String(order.id).slice(0, 8) : 'N/A').toUpperCase()}
                   </p>
                   <p
                     style={{

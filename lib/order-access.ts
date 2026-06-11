@@ -42,7 +42,7 @@ export function orderItemSummary(items: unknown): string {
     .slice(0, 2)
     .map((item) => {
       const row = item as OrderItemRow;
-      const qty = row.qty > 1 ? ` ×${row.qty}` : '';
+      const qty = Number(row.qty) > 1 ? ` ×${row.qty}` : '';
       return `${row.product_name ?? 'Article'}${qty}`;
     });
   const extra = items.length > 2 ? ` +${items.length - 2}` : '';

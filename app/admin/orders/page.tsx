@@ -97,7 +97,7 @@ export default async function AdminOrdersPage() {
               return (
                 <tr key={o.id} style={{ borderBottom: '1px solid var(--bordure)' }}>
                   <td style={{ padding: '12px 14px', fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--gris)' }}>
-                    {o.id ? o.id.slice(0, 8).toUpperCase() : 'N/A'}
+                    {o.id != null ? String(o.id).slice(0, 8).toUpperCase() : 'N/A'}
                   </td>
                   <td style={{ padding: '12px 14px' }}>{o.customer_name ?? '—'}</td>
                   <td style={{ padding: '12px 14px', color: 'var(--gris)', fontSize: '0.8rem' }}>
