@@ -3,7 +3,7 @@
 // ============================================================
 
 // ---------- PRODUIT ----------
-export type ProductMaterial = 'acier-inoxydable' | 'alliage' | 'epoxy';
+export type ProductMaterial = 'acier-inoxydable' | 'alliage' | 'epoxy' | 'pate-polymere';
 
 export type ProductCategory =
   | 'colliers'
@@ -34,7 +34,7 @@ export interface Product {
    * La décoration et sous-rayons : slugs préfixés decoration-plateaux, decoration-bijoux, etc.
    */
   category: ProductCategory;
-  /** Matériaux cumulables (acier inoxydable, alliage, époxy). */
+  /** Matériaux cumulables (acier inoxydable, alliage, époxy, pâte polymère). */
   materials?: ProductMaterial[];
   badge?: string;
   image_url: string;

@@ -4,6 +4,7 @@ export const PRODUCT_MATERIALS: { slug: ProductMaterial; label: string }[] = [
   { slug: 'acier-inoxydable', label: 'Acier inoxydable' },
   { slug: 'alliage', label: 'Alliage' },
   { slug: 'epoxy', label: 'Époxy' },
+  { slug: 'pate-polymere', label: 'Pâte polymère' },
 ];
 
 const VALID_SLUGS = new Set<ProductMaterial>(PRODUCT_MATERIALS.map((m) => m.slug));
