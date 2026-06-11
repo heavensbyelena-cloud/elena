@@ -1,7 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { AppliedPromo, CartItem as CartItemType } from '@/types';
+import {
+  clampToStock,
+  hasAvailableStock,
+  maxCartQuantity,
+  type CartStockResult,
+} from '@/lib/cart-stock';
+import { normalizeProductId } from '@/lib/utils';
 
 /* ── Types ───────────────────────────────────────────── */
 interface CartContextValue {
@@ -14,12 +21,13 @@ interface CartContextValue {
   openCart: () => void;
   closeCart: () => void;
   /** API historique */
-  addItem: (item: Omit<CartItemType, 'qty'>) => void;
+  addItem: (item: Omit<CartItemType, 'qty'>) => CartStockResult;
   removeItem: (id: string) => void;
   /** Nouvelle API plus explicite */
-  addToCart: (item: Omit<CartItemType, 'qty'>, quantity?: number) => void;
+  addToCart: (item: Omit<CartItemType, 'qty'>, quantity?: number) => CartStockResult;
   removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  /** Retourne false si la quantité demandée dépasse le stock */
+  updateQuantity: (id: string, quantity: number) => boolean;
   clearCart: () => void;
 }
 
@@ -40,6 +48,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const stockRefreshStarted = useRef(false);
 
   // Marquer quand on est bien côté client (évite tout accès localStorage/document côté SSR)
   useEffect(() => {
@@ -58,6 +67,41 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (promoRaw) setAppliedPromoState(JSON.parse(promoRaw));
     } catch { /* promo corrompue */ }
   }, [isClient]);
+
+  // Compléter le stock depuis l’API pour les paniers localStorage sans stock
+  useEffect(() => {
+    if (!isClient || items.length === 0 || stockRefreshStarted.current) return;
+    if (!items.some((i) => i.stock === undefined)) return;
+
+    stockRefreshStarted.current = true;
+    let cancelled = false;
+
+    void fetch('/api/products?limit=200')
+      .then((res) => (res.ok ? res.json() : { products: [] }))
+      .then((data: { products?: Array<{ id: unknown; stock?: number | null }> }) => {
+        if (cancelled) return;
+        const stockById = new Map(
+          (data.products ?? []).map((p) => [normalizeProductId(p.id), p.stock ?? null])
+        );
+        setItems((prev) =>
+          prev.map((item) => {
+            const stock = stockById.get(normalizeProductId(item.id)) ?? item.stock ?? null;
+            return {
+              ...item,
+              stock,
+              qty: clampToStock(item.qty, stock),
+            };
+          })
+        );
+      })
+      .catch(() => {
+        stockRefreshStarted.current = false;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, items.length]);
 
   const setAppliedPromo = useCallback((promo: AppliedPromo | null) => {
     setAppliedPromoState(promo);
@@ -146,31 +190,58 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = useCallback(() => setIsOpen(false), []);
 
   const addToCart = useCallback(
-    (product: Omit<CartItemType, 'qty'>, quantity = 1) => {
-      if (quantity <= 0) return;
+    (product: Omit<CartItemType, 'qty'>, quantity = 1): CartStockResult => {
+      if (quantity <= 0) return 'out_of_stock';
 
-      // Mise à jour optimiste du panier local
+      const stock = product.stock;
+      if (!hasAvailableStock(stock)) return 'out_of_stock';
+
+      let result: CartStockResult = 'added';
+
       setItems((prev) => {
         const existing = prev.find((i) => i.id === product.id);
+        const effectiveStock = stock ?? existing?.stock ?? null;
+        const currentQty = existing?.qty ?? 0;
+        const max = maxCartQuantity(effectiveStock);
+
+        if (max === 0) {
+          result = 'out_of_stock';
+          return prev;
+        }
+
+        const requested = currentQty + quantity;
+        const nextQty = clampToStock(requested, effectiveStock);
+
+        if (nextQty <= 0) {
+          result = 'out_of_stock';
+          return prev;
+        }
+
+        if (nextQty < requested || (max !== null && currentQty >= max)) {
+          result = 'stock_limit';
+        }
+
         if (existing) {
           return prev.map((i) =>
-            i.id === product.id ? { ...i, qty: i.qty + quantity } : i
+            i.id === product.id
+              ? { ...i, ...product, stock: effectiveStock, qty: nextQty }
+              : i
           );
         }
-        return [...prev, { ...product, qty: quantity }];
+
+        return [...prev, { ...product, stock: effectiveStock, qty: nextQty }];
       });
 
-      // Réplication dans Supabase si l'utilisateur est connecté
       if (isAuthenticated) {
         void fetch(CART_ADD_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ product_id: product.id, quantity }),
-        }).catch(() => {
-          // on garde le panier local même si l'appel échoue
-        });
+        }).catch(() => {});
       }
+
+      return result;
     },
     [isAuthenticated]
   );
@@ -192,12 +263,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateQuantity = useCallback(
-    (id: string, quantity: number) => {
+    (id: string, quantity: number): boolean => {
+      let allowed = true;
+      let cappedQty = 0;
+
       setItems((prev) => {
-        if (quantity <= 0) {
+        const item = prev.find((i) => i.id === id);
+        if (!item) return prev;
+
+        cappedQty = clampToStock(quantity, item.stock);
+        if (quantity > cappedQty) allowed = false;
+
+        if (cappedQty <= 0) {
           return prev.filter((i) => i.id !== id);
         }
-        return prev.map((i) => (i.id === id ? { ...i, qty: quantity } : i));
+
+        return prev.map((i) => (i.id === id ? { ...i, qty: cappedQty } : i));
       });
 
       if (isAuthenticated) {
@@ -208,19 +289,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             credentials: 'include',
             body: JSON.stringify({ product_id: id }),
           }).catch(() => {});
-        } else {
-          // On envoie la quantité cible en repassant par /add (incrément) n'est pas fiable,
-          // donc on utilise /sync avec un seul élément.
+        } else if (cappedQty > 0) {
           void fetch(CART_SYNC_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-              items: [{ product_id: id, quantity }],
+              items: [{ product_id: id, quantity: cappedQty }],
             }),
           }).catch(() => {});
         }
       }
+
+      return allowed;
     },
     [isAuthenticated]
   );
@@ -228,6 +309,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = useCallback(() => {
     setItems([]);
     setAppliedPromo(null);
+    stockRefreshStarted.current = false;
     try {
       localStorage.removeItem(CART_KEY);
     } catch {

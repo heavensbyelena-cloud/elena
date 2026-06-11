@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { FREE_SHIPPING_THRESHOLD } from '@/lib/utils';
+import { isAtStockMax } from '@/lib/cart-stock';
+import { useToast } from '@/context/ToastContext';
 
 function fmt(n: number) {
   return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
@@ -12,6 +14,7 @@ function fmt(n: number) {
 
 export default function CartSidebar() {
   const { items, total, count, isOpen, closeCart, updateQuantity, removeFromCart } = useCart();
+  const { showToast } = useToast();
 
   // Fermer avec Escape
   useEffect(() => {
@@ -19,6 +22,12 @@ export default function CartSidebar() {
     document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
   }, [closeCart]);
+
+  function increaseQty(id: string, currentQty: number) {
+    if (!updateQuantity(id, currentQty + 1)) {
+      showToast('Stock maximum atteint pour cet article.');
+    }
+  }
 
   return (
     <>
@@ -87,7 +96,11 @@ export default function CartSidebar() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button onClick={() => updateQuantity(item.id, item.qty - 1)} style={{ width: '26px', height: '26px', background: 'transparent', border: '1px solid var(--bordure)', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                     <span style={{ fontSize: '0.9rem', minWidth: '20px', textAlign: 'center', color: 'var(--texte)' }}>{item.qty}</span>
-                    <button onClick={() => updateQuantity(item.id, item.qty + 1)} style={{ width: '26px', height: '26px', background: 'transparent', border: '1px solid var(--bordure)', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                    <button
+                      onClick={() => increaseQty(item.id, item.qty)}
+                      disabled={isAtStockMax(item.qty, item.stock)}
+                      style={{ width: '26px', height: '26px', background: 'transparent', border: '1px solid var(--bordure)', cursor: isAtStockMax(item.qty, item.stock) ? 'not-allowed' : 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isAtStockMax(item.qty, item.stock) ? 0.4 : 1 }}
+                    >+</button>
                   </div>
                 </div>
                 <button onClick={() => removeFromCart(item.id)} aria-label={`Supprimer ${item.name}`} style={{ background: 'none', border: 'none', fontSize: '0.9rem', color: 'var(--gris)', cursor: 'pointer', alignSelf: 'flex-start' }}>

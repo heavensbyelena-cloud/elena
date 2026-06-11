@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
 import { normalizeProductId } from '@/lib/utils';
+import { clampToStock } from '@/lib/cart-stock';
 
 interface IncomingItem {
   product_id: string;
@@ -52,23 +53,55 @@ export async function POST(request: NextRequest) {
       mergedMap.set(pid, (mergedMap.get(pid) ?? 0) + qty);
     }
 
-    const finalItems = Array.from(mergedMap.entries()).map(([product_id, quantity]) => ({
-      user_id: user.id,
-      product_id,
-      quantity,
-    }));
+    const finalEntries = Array.from(mergedMap.entries());
 
-    // Réécrire complètement le panier utilisateur pour supprimer doublons/anciens
-    const { error: deleteError } = await db
-      .from('cart_items')
-      .delete()
-      .eq('user_id', user.id);
+    if (finalEntries.length > 0) {
+      const productIds = finalEntries.map(([product_id]) => product_id);
+      const { data: productRows, error: productsError } = await db
+        .from('products')
+        .select('id, stock')
+        .in('id', productIds);
 
-    if (deleteError) throw deleteError;
+      if (productsError) throw productsError;
 
-    if (finalItems.length > 0) {
-      const { error: insertError } = await db.from('cart_items').insert(finalItems);
-      if (insertError) throw insertError;
+      const stockById = new Map(
+        (productRows ?? []).map((p: { id: unknown; stock: number | null }) => [
+          normalizeProductId(p.id),
+          p.stock ?? null,
+        ])
+      );
+
+      const finalItems = finalEntries
+        .map(([product_id, quantity]) => {
+          const stock = stockById.get(normalizeProductId(product_id)) ?? null;
+          const capped = clampToStock(quantity, stock);
+          if (capped <= 0) return null;
+          return {
+            user_id: user.id,
+            product_id,
+            quantity: capped,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x != null);
+
+      const { error: deleteError } = await db
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      if (finalItems.length > 0) {
+        const { error: insertError } = await db.from('cart_items').insert(finalItems);
+        if (insertError) throw insertError;
+      }
+    } else {
+      const { error: deleteError } = await db
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
     }
 
     // Produits : deux requêtes (évite les erreurs PostgREST sur le join `products!inner`)
@@ -86,15 +119,15 @@ export async function POST(request: NextRequest) {
     const productIds = [...new Set(cartRows.map((r) => r.product_id))];
     const { data: productRows, error: productsError } = await db
       .from('products')
-      .select('id, name, price, image_url')
+      .select('id, name, price, image_url, stock')
       .in('id', productIds);
 
     if (productsError) throw productsError;
 
     const byId = new Map(
-      (productRows ?? []).map((p: { id: unknown; name: string; price: number; image_url: string | null }) => [
+      (productRows ?? []).map((p: { id: unknown; name: string; price: number; image_url: string | null; stock: number | null }) => [
         normalizeProductId(p.id),
-        { ...p, id: normalizeProductId(p.id) },
+        { ...p, id: normalizeProductId(p.id), stock: p.stock ?? null },
       ])
     );
 
@@ -107,7 +140,8 @@ export async function POST(request: NextRequest) {
           name: p.name,
           price: p.price,
           image_url: p.image_url,
-          qty: row.quantity,
+          stock: p.stock,
+          qty: clampToStock(row.quantity, p.stock),
         };
       })
       .filter((x): x is NonNullable<typeof x> => x != null);

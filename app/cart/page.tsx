@@ -5,14 +5,23 @@ import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import PromoInput from '@/components/Cart/PromoInput';
 import { calcShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/utils';
+import { isAtStockMax } from '@/lib/cart-stock';
+import { useToast } from '@/context/ToastContext';
 
 function fmt(n: number) { return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'; }
 
 export default function CartPage() {
   const { items, total, appliedPromo, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { showToast } = useToast();
   const shipping = calcShipping(total);
   const discount = appliedPromo?.discount_amount ?? 0;
   const grandTotal = Math.max(0, total + shipping - discount);
+
+  function increaseQty(id: string, currentQty: number) {
+    if (!updateQuantity(id, currentQty + 1)) {
+      showToast('Stock maximum atteint pour cet article.');
+    }
+  }
 
   if (items.length === 0) {
     return (
@@ -42,8 +51,17 @@ export default function CartPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <button onClick={() => updateQuantity(item.id, item.qty - 1)} style={{ width: 28, height: 28, border: '1px solid var(--bordure)', background: 'transparent', cursor: 'pointer', fontSize: '1rem' }}>−</button>
                   <span style={{ minWidth: '20px', textAlign: 'center', fontSize: '0.9rem' }}>{item.qty}</span>
-                  <button onClick={() => updateQuantity(item.id, item.qty + 1)} style={{ width: 28, height: 28, border: '1px solid var(--bordure)', background: 'transparent', cursor: 'pointer', fontSize: '1rem' }}>+</button>
+                  <button
+                    onClick={() => increaseQty(item.id, item.qty)}
+                    disabled={isAtStockMax(item.qty, item.stock)}
+                    style={{ width: 28, height: 28, border: '1px solid var(--bordure)', background: 'transparent', cursor: isAtStockMax(item.qty, item.stock) ? 'not-allowed' : 'pointer', fontSize: '1rem', opacity: isAtStockMax(item.qty, item.stock) ? 0.4 : 1 }}
+                  >+</button>
                 </div>
+                {item.stock != null && (
+                  <p style={{ fontSize: '0.72rem', color: 'var(--gris)', marginTop: '6px' }}>
+                    {item.stock === 0 ? 'Rupture de stock' : `${item.stock} en stock`}
+                  </p>
+                )}
               </div>
               <div style={{ textAlign: 'right' }}>
                 <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1rem', marginBottom: '12px' }}>{fmt(item.price * item.qty)}</p>

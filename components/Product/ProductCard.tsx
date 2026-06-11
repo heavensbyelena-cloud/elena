@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import type { Product } from '@/types';
 import { getPrimaryImageUrl } from '@/lib/product-images';
+import { hasAvailableStock } from '@/lib/cart-stock';
 
 function fmt(n: number) {
   return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
@@ -16,15 +17,24 @@ export default function ProductCard({ product }: { product: Product }) {
   const { showToast } = useToast();
   const thumbUrl = getPrimaryImageUrl(product);
 
+  const outOfStock = !hasAvailableStock(product.stock);
+
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
-    addItem({
+    if (outOfStock) {
+      showToast('Ce produit est en rupture de stock.');
+      return;
+    }
+    const result = addItem({
       id: String(product.id),
       name: product.name,
       price: product.price,
       image_url: thumbUrl,
+      stock: product.stock ?? null,
     });
-    showToast(`${product.name} ajouté au panier ✦`);
+    if (result === 'out_of_stock') showToast('Ce produit est en rupture de stock.');
+    else if (result === 'stock_limit') showToast('Stock maximum atteint pour ce produit.');
+    else showToast(`${product.name} ajouté au panier ✦`);
   }
 
   return (
@@ -58,8 +68,13 @@ export default function ProductCard({ product }: { product: Product }) {
           </Link>
         </h3>
         <p style={{ fontSize: '0.88rem', color: 'var(--accent)', marginBottom: '14px' }}>{fmt(product.price)}</p>
-        <button onClick={handleAdd} className="btn-primary" style={{ width: '100%', padding: '11px' }}>
-          Ajouter au panier
+        <button
+          onClick={handleAdd}
+          disabled={outOfStock}
+          className="btn-primary"
+          style={{ width: '100%', padding: '11px', opacity: outOfStock ? 0.5 : 1, cursor: outOfStock ? 'not-allowed' : 'pointer' }}
+        >
+          {outOfStock ? 'Rupture de stock' : 'Ajouter au panier'}
         </button>
       </div>
     </article>

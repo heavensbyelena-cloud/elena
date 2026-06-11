@@ -72,6 +72,8 @@ export interface CartItem {
   price: number;
   image_url: string;
   qty: number;
+  /** null = illimité ; absent sur anciens paniers localStorage */
+  stock?: number | null;
 }
 
 export interface CartState {
