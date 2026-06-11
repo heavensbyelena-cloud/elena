@@ -1,7 +1,8 @@
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { formatPrice, translateStatus } from '@/lib/utils';
+import { linkGuestOrdersToUser, orderItemSummary } from '@/lib/order-access';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#e8a040',
@@ -32,11 +33,31 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/account/login');
 
-  const { data: orders } = await supabase
+  const admin = createAdminClient();
+  await linkGuestOrdersToUser(admin, user);
+
+  const email = (user.email ?? '').trim().toLowerCase();
+  const { data: ordersByUser } = await admin
     .from('orders')
-    .select('id, status, created_at, items, subtotal, shipping_cost, total_price, total')
+    .select('id, status, created_at, items, subtotal, shipping_cost, total_price, total, customer_email, user_id')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  const { data: ordersByEmail } = email
+    ? await admin
+        .from('orders')
+        .select('id, status, created_at, items, subtotal, shipping_cost, total_price, total, customer_email, user_id')
+        .ilike('customer_email', email)
+        .order('created_at', { ascending: false })
+    : { data: [] as UserOrderRow[] };
+
+  const ordersMap = new Map<string, UserOrderRow>();
+  for (const o of [...(ordersByUser ?? []), ...(ordersByEmail ?? [])]) {
+    ordersMap.set(String(o.id), o as UserOrderRow);
+  }
+  const orders = [...ordersMap.values()].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', user.id).single();
 
@@ -108,8 +129,7 @@ export default async function DashboardPage() {
                       marginBottom: '4px',
                     }}
                   >
-                    {(order.items as unknown[]).length} article
-                    {(order.items as unknown[]).length > 1 ? 's' : ''}
+                    {orderItemSummary(order.items)}
                   </p>
                   <p style={{ fontSize: '0.75rem', color: 'var(--gris)' }}>
                     {new Date(order.created_at).toLocaleDateString('fr-FR', {

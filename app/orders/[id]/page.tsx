@@ -1,7 +1,8 @@
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
-import { redirect, notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { formatPrice, formatDate, translateStatus } from '@/lib/utils';
+import { orderBelongsToUser } from '@/lib/order-access';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -46,7 +47,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
   const { data: order } = await admin
     .from('orders')
     .select('id, user_id, customer_name, customer_email, items, shipping_address, subtotal, shipping_cost, total_price, total, discount_amount, promo_code_id, status, created_at, notes')
-    .eq('id', Number(id))
+    .eq('id', id)
     .maybeSingle();
 
   let promoCode: string | null = null;
@@ -72,7 +73,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
     );
   }
 
-  if (!profile?.is_admin && order.user_id && order.user_id !== user.id) {
+  if (!profile?.is_admin && !orderBelongsToUser(order, user)) {
     redirect('/account/dashboard');
   }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase-server';
+import { createAdminClient, createServerSupabaseClient } from '@/lib/supabase-server';
 import { sendOrderConfirmationEmail, type OrderEmailRow } from '@/lib/email/order-emails';
+import { linkGuestOrdersToUser } from '@/lib/order-access';
 
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get('session_id');
@@ -21,6 +22,12 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
     if (!order) {
       return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 });
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await linkGuestOrdersToUser(admin, user);
     }
 
     const row = order as {
