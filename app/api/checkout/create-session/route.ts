@@ -12,9 +12,9 @@ import {
   stripeProductImages,
   stripePaymentErrorMessage,
 } from '@/lib/stripe-checkout';
-import { getStripeClient } from '@/lib/stripe-server';
+import { getStripeClient, validateStripeSecretKey } from '@/lib/stripe-server';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -99,9 +99,14 @@ async function validatePromoForCheckout(
 
 export async function POST(request: NextRequest) {
   devLog('[create-session] STRIPE_SECRET_KEY:', stripeSecretKey ? 'défini' : 'manquant');
-  if (!stripeSecretKey) {
+  const keyCheck = validateStripeSecretKey(
+    stripeSecretKey,
+    process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ?? process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  );
+  if (!keyCheck.ok) {
+    console.error('[create-session]', keyCheck.code, keyCheck.message);
     return NextResponse.json(
-      { error: 'Stripe n\'est pas configuré (STRIPE_SECRET_KEY manquant)' },
+      { error: keyCheck.message, code: keyCheck.code },
       { status: 500 }
     );
   }

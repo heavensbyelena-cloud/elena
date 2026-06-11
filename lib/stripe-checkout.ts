@@ -32,7 +32,7 @@ export function stripePaymentErrorMessage(err: unknown): string {
       err.code === 'api_key_expired' ||
       err.code === 'invalid_api_key'
     ) {
-      return 'Configuration Stripe incorrecte sur le serveur (clé secrète). Contactez le support.';
+      return 'Clé Stripe secrète refusée par Stripe. Recopiez sk_live_… depuis Developers → Clés API (mode Live), puis mettez à jour STRIPE_SECRET_KEY sur Cloudflare.';
     }
     if (err.code === 'amount_too_small') {
       return 'Le montant est trop faible pour un paiement par carte (minimum 0,50 €).';
