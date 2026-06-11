@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { devLog } from '@/lib/dev-log';
 import { checkProductionSiteUrl, getPublicSiteUrl } from '@/lib/site-url';
+import { normalizeProductId } from '@/lib/utils';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -171,7 +172,9 @@ export async function POST(request: NextRequest) {
     const admin = createAdminClient();
 
     // Chargement des prix réels depuis la base de données (sécurité anti-manipulation)
-    const productIds: string[] = items.map((i: { id: string }) => i.id).filter(Boolean);
+    const productIds = (items as Array<{ id: unknown }>)
+      .map((i) => normalizeProductId(i.id))
+      .filter(Boolean);
     if (productIds.length === 0) {
       return NextResponse.json({ error: 'Produits invalides' }, { status: 400 });
     }
@@ -182,18 +185,43 @@ export async function POST(request: NextRequest) {
       .in('id', productIds);
 
     if (productsError || !dbProducts?.length) {
-      return NextResponse.json({ error: 'Produits introuvables' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            'Un ou plusieurs articles de votre panier ne sont plus disponibles. Videz le panier et rajoutez vos produits depuis la boutique.',
+        },
+        { status: 400 }
+      );
     }
 
-    const productMap = new Map<string, { name: string; price: number; image_url: string; is_active: boolean; stock: number | null }>(
-      dbProducts.map((p: { id: string; name: string; price: number; image_url: string; is_active: boolean; stock: number | null }) => [p.id, p])
+    const productMap = new Map<
+      string,
+      { id: string; name: string; price: number; image_url: string; is_active: boolean; stock: number | null }
+    >(
+      dbProducts.map(
+        (p: {
+          id: unknown;
+          name: string;
+          price: number;
+          image_url: string;
+          is_active: boolean;
+          stock: number | null;
+        }) => [normalizeProductId(p.id), { ...p, id: normalizeProductId(p.id) }]
+      )
     );
 
     // Vérifier que tous les produits existent et sont actifs
-    for (const item of items as Array<{ id: string; qty: number }>) {
-      const dbProduct = productMap.get(item.id);
+    for (const item of items as Array<{ id: unknown; qty: number }>) {
+      const itemId = normalizeProductId(item.id);
+      const dbProduct = productMap.get(itemId);
       if (!dbProduct) {
-        return NextResponse.json({ error: `Produit introuvable : ${item.id}` }, { status: 400 });
+        return NextResponse.json(
+          {
+            error:
+              'Un article de votre panier n\'est plus disponible. Videz le panier et rajoutez vos produits depuis la boutique.',
+          },
+          { status: 400 }
+        );
       }
       if (!dbProduct.is_active) {
         return NextResponse.json({ error: `Produit non disponible : ${dbProduct.name}` }, { status: 400 });
@@ -204,8 +232,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Calcul du sous-total avec les prix de la base de données
-    const computedSubtotal = (items as Array<{ id: string; qty: number }>).reduce(
-      (sum, i) => sum + (productMap.get(i.id)?.price ?? 0) * i.qty,
+    const computedSubtotal = (items as Array<{ id: unknown; qty: number }>).reduce(
+      (sum, i) => sum + (productMap.get(normalizeProductId(i.id))?.price ?? 0) * i.qty,
       0
     );
     const ship = Number(shipping_cost ?? 0);
@@ -238,9 +266,9 @@ export async function POST(request: NextRequest) {
     } as unknown as ConstructorParameters<typeof Stripe>[1]);
 
     // line_items Stripe construits avec les prix de la base de données (pas ceux du client)
-    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = (items as Array<{ id: string; qty: number }>).map(
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = (items as Array<{ id: unknown; qty: number }>).map(
       (item) => {
-        const dbProduct = productMap.get(item.id)!;
+        const dbProduct = productMap.get(normalizeProductId(item.id))!;
         return {
           price_data: {
             currency: 'eur',
@@ -309,10 +337,10 @@ export async function POST(request: NextRequest) {
     devLog('[create-session] Stripe Session créée:', { sessionId: session.id, url: session.url ? 'ok' : 'manquant' });
 
     // Commande enregistrée avec les prix de la base de données
-    const orderItems = (items as Array<{ id: string; qty: number }>).map((i) => {
-      const dbProduct = productMap.get(i.id)!;
+    const orderItems = (items as Array<{ id: unknown; qty: number }>).map((i) => {
+      const dbProduct = productMap.get(normalizeProductId(i.id))!;
       return {
-        product_id: i.id,
+        product_id: dbProduct.id,
         product_name: dbProduct.name,
         price: dbProduct.price,
         qty: i.qty,

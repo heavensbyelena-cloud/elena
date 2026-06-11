@@ -91,15 +91,15 @@ export async function POST(request: NextRequest) {
     if (productsError) throw productsError;
 
     const byId = new Map(
-      (productRows ?? []).map((p: { id: string; name: string; price: number; image_url: string | null }) => [
-        p.id,
-        p,
+      (productRows ?? []).map((p: { id: unknown; name: string; price: number; image_url: string | null }) => [
+        normalizeProductId(p.id),
+        { ...p, id: normalizeProductId(p.id) },
       ])
     );
 
     const items = cartRows
       .map((row) => {
-        const p = byId.get(row.product_id);
+        const p = byId.get(normalizeProductId(row.product_id));
         if (!p) return null;
         return {
           id: p.id,

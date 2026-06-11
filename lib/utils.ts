@@ -55,7 +55,11 @@ export function formatDate(dateStr: string): string {
 // PANIER
 // ============================================================
 
-/** Calcule le total d'un panier */
+/** Identifiant produit normalisé (évite échec Map quand JSON renvoie un nombre). */
+export function normalizeProductId(id: unknown): string {
+  return String(id ?? '').trim();
+}
+
 export function calcCartTotal(items: Array<{ price: number; qty: number }>): number {
   return items.reduce((sum, item) => sum + item.price * item.qty, 0);
 }
