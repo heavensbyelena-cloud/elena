@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/utils';
 
 function fmt(n: number) {
   return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
@@ -105,7 +106,7 @@ export default function CartSidebar() {
               <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.3rem', color: 'var(--accent)' }}>{fmt(total)}</span>
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--texte-muted)', textAlign: 'center', marginBottom: '16px' }}>
-              {total >= 60 ? '✓ Livraison offerte' : `Plus que ${fmt(60 - total)} pour la livraison offerte`}
+              {total >= FREE_SHIPPING_THRESHOLD ? '✓ Livraison offerte' : `Plus que ${fmt(FREE_SHIPPING_THRESHOLD - total)} pour la livraison offerte`}
             </p>
             <Link
               href="/checkout"

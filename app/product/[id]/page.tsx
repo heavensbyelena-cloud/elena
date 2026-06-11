@@ -7,6 +7,7 @@ import AddToCartButton from '@/components/Product/AddToCartButton';
 import ProductGallery from '@/components/Product/ProductGallery';
 import { getProductImages } from '@/lib/product-images';
 import { formatMaterialsList } from '@/lib/materials';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/utils';
 import type { Product, Review } from '@/types';
 
 interface Props { params: Promise<{ id: string }> }
@@ -132,7 +133,7 @@ export default async function ProductPage({ params }: Props) {
           {/* Infos livraison */}
           <div style={{ marginTop: '32px', borderTop: '1px solid var(--bordure)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
-              '✓ Livraison offerte dès 60€',
+              `✓ Livraison offerte dès ${FREE_SHIPPING_THRESHOLD}€`,
               '✓ Retours acceptés sous 14 jours',
               '✓ Pièce artisanale, faite main',
             ].map(t => (

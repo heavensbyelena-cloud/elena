@@ -65,9 +65,15 @@ export function calcCartCount(items: Array<{ qty: number }>): number {
   return items.reduce((sum, item) => sum + item.qty, 0);
 }
 
-/** Calcule les frais de livraison (offerts dès 60€) */
+/** Seuil panier (€) pour la livraison offerte */
+export const FREE_SHIPPING_THRESHOLD = 45;
+
+/** Frais de livraison standard (€) */
+export const STANDARD_SHIPPING_COST = 3.99;
+
+/** Calcule les frais de livraison (offerts dès FREE_SHIPPING_THRESHOLD) */
 export function calcShipping(subtotal: number): number {
-  return subtotal >= 60 ? 0 : 3.99;
+  return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
 }
 
 // ============================================================

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import PromoInput from '@/components/Cart/PromoInput';
-import { calcShipping } from '@/lib/utils';
+import { calcShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/utils';
 
 function fmt(n: number) { return n.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'; }
 
@@ -73,7 +73,7 @@ export default function CartPage() {
           </div>
           {shipping > 0 && (
             <p style={{ fontSize: '0.75rem', color: 'var(--accent)', marginBottom: '16px' }}>
-              Plus que {fmt(60 - total)} pour la livraison offerte
+              Plus que {fmt(FREE_SHIPPING_THRESHOLD - total)} pour la livraison offerte
             </p>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--bordure)', paddingTop: '16px', marginBottom: '24px' }}>

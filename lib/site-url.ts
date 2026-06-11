@@ -42,21 +42,24 @@ export function getPublicSiteUrl(): string {
 export type SiteUrlCheck = { ok: true } | { ok: false; reason: string };
 
 /**
- * En production, refuse une config dangereuse (localhost ou HTTPS manquant).
+ * En production, vérifie que l’URL publique effective (env ou repli) est utilisable pour Stripe.
  */
 export function checkProductionSiteUrl(): SiteUrlCheck {
   if (process.env.NODE_ENV !== 'production') {
     return { ok: true };
   }
-  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!raw) {
-    return { ok: false, reason: 'NEXT_PUBLIC_SITE_URL est manquant' };
+  const effective = getPublicSiteUrl();
+  if (isLocalUrl(effective)) {
+    return {
+      ok: false,
+      reason: 'URL publique du site invalide (localhost en production)',
+    };
   }
-  if (isLocalUrl(raw)) {
-    return { ok: false, reason: 'NEXT_PUBLIC_SITE_URL ne doit pas pointer vers localhost en production' };
-  }
-  if (!raw.startsWith('https://')) {
-    return { ok: false, reason: 'NEXT_PUBLIC_SITE_URL doit commencer par https:// en production' };
+  if (!effective.startsWith('https://')) {
+    return {
+      ok: false,
+      reason: 'URL publique du site doit commencer par https:// en production',
+    };
   }
   return { ok: true };
 }
