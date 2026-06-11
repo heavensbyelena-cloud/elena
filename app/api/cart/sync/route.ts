@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase-server';
+import { normalizeProductId } from '@/lib/utils';
 
 interface IncomingItem {
   product_id: string;
