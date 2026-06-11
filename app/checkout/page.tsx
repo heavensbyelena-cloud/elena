@@ -301,7 +301,12 @@ export default function CheckoutPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const extra = typeof data.details === 'string' ? ` (${data.details})` : '';
+        const extra =
+          typeof data.details === 'string'
+            ? ` (${data.details})`
+            : typeof data.code === 'string'
+              ? ` [${data.code}]`
+              : '';
         throw new Error((data.error || 'Erreur lors de la création du paiement') + extra);
       }
       if (!data.url || typeof data.url !== 'string') throw new Error('URL Stripe manquante');

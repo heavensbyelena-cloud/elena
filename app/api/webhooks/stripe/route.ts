@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { sendOrderConfirmationEmail, type OrderEmailRow } from '@/lib/email/order-emails';
 import { devLog } from '@/lib/dev-log';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(request: NextRequest) {

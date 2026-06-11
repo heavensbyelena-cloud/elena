@@ -27,14 +27,27 @@ export function isStripeImageError(err: unknown): boolean {
 
 export function stripePaymentErrorMessage(err: unknown): string {
   if (err instanceof Stripe.errors.StripeError) {
+    if (
+      err.type === 'StripeAuthenticationError' ||
+      err.code === 'api_key_expired' ||
+      err.code === 'invalid_api_key'
+    ) {
+      return 'Configuration Stripe incorrecte sur le serveur (clé secrète). Contactez le support.';
+    }
     if (err.code === 'amount_too_small') {
       return 'Le montant est trop faible pour un paiement par carte (minimum 0,50 €).';
     }
     if (err.code === 'rate_limit') {
       return 'Trop de tentatives de paiement. Réessayez dans quelques instants.';
     }
+    if (err.code === 'email_invalid') {
+      return 'Adresse e-mail invalide. Vérifiez votre email.';
+    }
     if (isStripeImageError(err)) {
       return 'Le paiement n’a pas pu démarrer (image produit). Réessayez.';
+    }
+    if (err.type === 'StripeInvalidRequestError' && err.message) {
+      return `Paiement refusé par Stripe : ${err.message}`;
     }
     return 'Le paiement n’a pas pu être initialisé. Vérifiez vos informations ou réessayez.';
   }
@@ -102,17 +115,16 @@ function verboseCheckoutErrors(): boolean {
 }
 
 export function checkoutErrorResponse(
-  err: unknown,
-  status = 500
+  err: unknown
 ): { error: string; details?: string; code?: string } {
   const body: { error: string; details?: string; code?: string } = {
     error: stripePaymentErrorMessage(err),
   };
+  if (err instanceof Stripe.errors.StripeError) {
+    body.code = err.code ?? err.type;
+  }
   if (verboseCheckoutErrors() && err instanceof Error) {
     body.details = err.message;
-  }
-  if (verboseCheckoutErrors() && err instanceof Stripe.errors.StripeError) {
-    body.code = err.code;
   }
   return body;
 }

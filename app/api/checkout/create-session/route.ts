@@ -13,7 +13,7 @@ import {
   stripePaymentErrorMessage,
 } from '@/lib/stripe-checkout';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -281,6 +281,10 @@ export async function POST(request: NextRequest) {
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = (items as Array<{ id: unknown; qty: number }>).map(
       (item) => {
         const dbProduct = productMap.get(normalizeProductId(item.id))!;
+        const unitAmount = Math.round(Number(dbProduct.price) * 100);
+        if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
+          throw new Error(`INVALID_PRODUCT_PRICE:${dbProduct.name}`);
+        }
         return {
           price_data: {
             currency: 'eur',
@@ -288,7 +292,7 @@ export async function POST(request: NextRequest) {
               name: dbProduct.name,
               images: stripeProductImages(dbProduct.image_url),
             },
-            unit_amount: Math.round(dbProduct.price * 100),
+            unit_amount: unitAmount,
           },
           quantity: item.qty,
         };
@@ -333,7 +337,6 @@ export async function POST(request: NextRequest) {
       stripe,
       {
         mode: 'payment',
-        payment_method_types: ['card'],
         ...(discounts && discounts.length > 0 ? { discounts } : {}),
         customer_email: customer_email.trim(),
         metadata: {
@@ -409,6 +412,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url, sessionId: session.id });
   } catch (err) {
     console.error('[create-session] Erreur:', err instanceof Error ? err.message : err);
+    if (err instanceof Error && err.message.startsWith('INVALID_PRODUCT_PRICE:')) {
+      const name = err.message.replace('INVALID_PRODUCT_PRICE:', '');
+      return NextResponse.json(
+        { error: `Prix invalide pour le produit : ${name}` },
+        { status: 400 }
+      );
+    }
     const body = checkoutErrorResponse(err);
     return NextResponse.json(body, { status: 500 });
   }
