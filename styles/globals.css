@@ -460,3 +460,19 @@ ul.ui-autocomplete .ui-menu-item:hover .ui-menu-item-wrapper {
     z-index: 1;
   }
 }
+
+/* Admin — menu statut commande (évite texte clair sur fond blanc du select natif) */
+.admin-order-status-select {
+  background-color: #1c1c1c;
+  color: #e8e4de;
+  color-scheme: dark;
+}
+
+.admin-order-status-select:disabled {
+  cursor: wait;
+}
+
+.admin-order-status-select option {
+  background-color: #ffffff;
+  color: #141414;
+}

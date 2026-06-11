@@ -73,12 +73,14 @@ export default function AdminOrderStatus({
         value={status}
         onChange={handleChange}
         disabled={saving}
+        className="admin-order-status-select"
+        aria-label="Statut de la commande"
         style={{
           fontSize: '0.72rem',
-          padding: '4px 8px',
+          padding: '6px 10px',
+          minWidth: '130px',
           border: '1px solid var(--bordure)',
-          background: 'transparent',
-          cursor: 'pointer',
+          cursor: saving ? 'wait' : 'pointer',
           fontFamily: 'Inter, sans-serif',
           opacity: saving ? 0.6 : 1,
         }}
