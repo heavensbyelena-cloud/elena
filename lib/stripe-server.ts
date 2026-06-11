@@ -17,8 +17,34 @@ export function normalizeStripeSecretKey(raw: string | undefined): string | unde
 }
 
 function stripeKeyAccountId(key: string): string | null {
-  const match = key.match(/^(?:sk|pk)_(?:live|test)_([A-Za-z0-9]+)/);
+  // Identifiant compte Stripe : ~24 caractères après pk_live_ / sk_live_ (pas toute la clé).
+  const match = key.match(/^(?:sk|pk)_(?:live|test)_([A-Za-z0-9]{14,28})/);
   return match?.[1] ?? null;
+}
+
+export function validateStripePublicKey(publicKey: string | undefined): StripeSecretKeyCheck | null {
+  const pub = normalizeStripeSecretKey(publicKey) ?? publicKey?.trim();
+  if (!pub) return null;
+
+  if (pub.startsWith('sk_')) {
+    return {
+      ok: false,
+      code: 'stripe_public_is_secret',
+      message:
+        'NEXT_PUBLIC_STRIPE_PUBLIC_KEY contient une clé secrète. Utilisez pk_live_… (clé publique).',
+    };
+  }
+
+  if (!pub.startsWith('pk_live_') && !pub.startsWith('pk_test_')) {
+    return {
+      ok: false,
+      code: 'stripe_public_invalid_format',
+      message:
+        'NEXT_PUBLIC_STRIPE_PUBLIC_KEY invalide : elle doit commencer par pk_live_… ou pk_test_….',
+    };
+  }
+
+  return null;
 }
 
 export type StripeSecretKeyCheck =
@@ -28,7 +54,7 @@ export type StripeSecretKeyCheck =
 /** Vérifie le format de la clé secrète avant l’appel Stripe (sans exposer la clé). */
 export function validateStripeSecretKey(
   secretKey: string | undefined,
-  publicKey?: string
+  options?: { publicKey?: string; checkAccountMatch?: boolean }
 ): StripeSecretKeyCheck {
   const key = normalizeStripeSecretKey(secretKey);
   if (!key) {
@@ -80,16 +106,14 @@ export function validateStripeSecretKey(
     };
   }
 
+  const publicKey = options?.publicKey;
+  const checkAccountMatch = options?.checkAccountMatch ?? false;
+
+  const pubError = validateStripePublicKey(publicKey);
+  if (pubError) return pubError;
+
   const pub = normalizeStripeSecretKey(publicKey) ?? publicKey?.trim();
-  if (pub) {
-    if (pub.startsWith('sk_')) {
-      return {
-        ok: false,
-        code: 'stripe_public_is_secret',
-        message:
-          'NEXT_PUBLIC_STRIPE_PUBLIC_KEY contient une clé secrète. Utilisez pk_live_… (clé publique).',
-      };
-    }
+  if (pub && checkAccountMatch) {
     const pubMode = pub.startsWith('pk_live_')
       ? 'live'
       : pub.startsWith('pk_test_')
@@ -109,7 +133,7 @@ export function validateStripeSecretKey(
         ok: false,
         code: 'stripe_key_account_mismatch',
         message:
-          'Les clés Stripe publique et secrète ne proviennent pas du même compte Stripe. Recopiez la paire depuis la même page Clés API.',
+          'Les clés Stripe publique et secrète ne semblent pas correspondre. Vérifiez qu’elles viennent de la même page Clés API (mode Live).',
       };
     }
   }

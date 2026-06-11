@@ -99,10 +99,7 @@ async function validatePromoForCheckout(
 
 export async function POST(request: NextRequest) {
   devLog('[create-session] STRIPE_SECRET_KEY:', stripeSecretKey ? 'défini' : 'manquant');
-  const keyCheck = validateStripeSecretKey(
-    stripeSecretKey,
-    process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ?? process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  );
+  const keyCheck = validateStripeSecretKey(stripeSecretKey);
   if (!keyCheck.ok) {
     console.error('[create-session]', keyCheck.code, keyCheck.message);
     return NextResponse.json(
