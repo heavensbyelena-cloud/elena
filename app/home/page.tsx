@@ -3,8 +3,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import ProductGrid from '@/components/Product/ProductGrid';
 import HeroSection from '@/components/Hero/HeroSection';
+import ReviewCarousel from '@/components/Reviews/ReviewCarousel';
 import { createAdminClient } from '@/lib/supabase-server';
 import { getCategoriesWithImages } from '@/lib/category-images';
+import { getLatestApprovedReviews } from '@/lib/reviews';
 import { SEO, SITE_URL, OPEN_GRAPH_DEFAULTS, TWITTER_DEFAULTS } from '@/lib/seo';
 import { organizationSchema, websiteSchema, localBusinessSchema, jsonLd } from '@/lib/schema';
 import type { Product } from '@/types';
@@ -80,7 +82,11 @@ async function getBestSellers(): Promise<Product[]> {
 }
 
 export default async function HomePage() {
-  const [products, categories] = await Promise.all([getBestSellers(), getCategoriesWithImages()]);
+  const [products, categories, { reviews, average }] = await Promise.all([
+    getBestSellers(),
+    getCategoriesWithImages(),
+    getLatestApprovedReviews(10),
+  ]);
 
   return (
     <>
@@ -143,6 +149,14 @@ Un monde à part.`}
           <Link href="/shop" className="btn-secondary">Voir tous les produits</Link>
         </div>
       </section>
+
+      {/* ── AVIS CLIENTS ─────────────────────────────────── */}
+      {reviews.length > 0 && (
+        <section className="section-padding" style={{ background: 'var(--fond)' }} id="avis">
+          <h2 className="section-title" style={{ marginBottom: '50px' }}>Ils nous font confiance</h2>
+          <ReviewCarousel reviews={reviews} averageRating={average} />
+        </section>
+      )}
 
       {/* ── NOTRE HISTOIRE ───────────────────────────────── */}
       <section id="histoire" className="section-padding" style={{ background: 'var(--fond)' }}>
