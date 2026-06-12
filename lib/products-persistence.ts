@@ -25,6 +25,17 @@ type ProductWritePayload = Record<string, unknown> & {
   images?: string[] | null;
 };
 
+export type ProductWriteMeta = {
+  imagesStripped?: boolean;
+  materialsStripped?: boolean;
+};
+
+export type ProductWriteResult = {
+  data: Record<string, unknown> | null;
+  error: DbError | null;
+  meta: ProductWriteMeta;
+};
+
 function stripOptionalColumns(
   payload: ProductWritePayload,
   stripImages: boolean,
@@ -45,12 +56,15 @@ function stripOptionalColumns(
 export async function insertProductRow(
   admin: SupabaseClient,
   payload: ProductWritePayload
-) {
+): Promise<ProductWriteResult> {
+  const meta: ProductWriteMeta = {};
   let result = await admin.from('products').insert([payload]).select().single();
   if (result.error) {
     const stripImages = isMissingImagesColumn(result.error) && 'images' in payload;
     const stripMaterials = isMissingMaterialsColumn(result.error) && 'materials' in payload;
     if (stripImages || stripMaterials) {
+      if (stripImages) meta.imagesStripped = true;
+      if (stripMaterials) meta.materialsStripped = true;
       result = await admin
         .from('products')
         .insert([stripOptionalColumns(payload, stripImages, stripMaterials)])
@@ -58,19 +72,22 @@ export async function insertProductRow(
         .single();
     }
   }
-  return result;
+  return { data: result.data as Record<string, unknown> | null, error: result.error, meta };
 }
 
 export async function updateProductRow(
   admin: SupabaseClient,
   id: string,
   payload: ProductWritePayload
-) {
+): Promise<ProductWriteResult> {
+  const meta: ProductWriteMeta = {};
   let result = await admin.from('products').update(payload).eq('id', id).select().single();
   if (result.error) {
     const stripImages = isMissingImagesColumn(result.error) && 'images' in payload;
     const stripMaterials = isMissingMaterialsColumn(result.error) && 'materials' in payload;
     if (stripImages || stripMaterials) {
+      if (stripImages) meta.imagesStripped = true;
+      if (stripMaterials) meta.materialsStripped = true;
       result = await admin
         .from('products')
         .update(stripOptionalColumns(payload, stripImages, stripMaterials))
@@ -79,5 +96,16 @@ export async function updateProductRow(
         .single();
     }
   }
-  return result;
+  return { data: result.data as Record<string, unknown> | null, error: result.error, meta };
+}
+
+export function galleryMigrationWarning(
+  meta: ProductWriteMeta,
+  requestedImageCount: number
+): string | null {
+  if (!meta.imagesStripped || requestedImageCount <= 1) return null;
+  return (
+    'Seules la première photo a été enregistrée. Pour afficher jusqu’à 3 photos, exécutez la migration Supabase ' +
+    '« products_images_array » (colonne images), puis ré-enregistrez le produit.'
+  );
 }

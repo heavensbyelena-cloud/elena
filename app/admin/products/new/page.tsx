@@ -99,9 +99,12 @@ export default function AdminNewProductPage() {
           stock: form.stock ? parseInt(form.stock) : null,
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data.debug || data.error || 'Erreur lors de la création du produit.');
+      }
+      if (typeof data.warning === 'string') {
+        alert(data.warning);
       }
       router.push('/admin');
     } catch (err) {

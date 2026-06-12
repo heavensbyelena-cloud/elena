@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase-server';
 import { requireAdminApi } from '@/lib/auth';
 import { normalizeProductImages } from '@/lib/product-images';
 import { normalizeMaterialsInput } from '@/lib/materials';
-import { updateProductRow } from '@/lib/products-persistence';
+import { updateProductRow, galleryMigrationWarning } from '@/lib/products-persistence';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       materials: normalizeMaterialsInput(body.materials),
       updated_at: new Date().toISOString(),
     };
-    const { data, error } = await updateProductRow(admin, id, payload);
+    const { data, error, meta } = await updateProductRow(admin, id, payload);
 
     if (error) {
       return NextResponse.json(
@@ -54,7 +54,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
         { status: 500 }
       );
     }
-    return NextResponse.json({ product: data });
+    const warning = galleryMigrationWarning(meta, normalized.images.length);
+    return NextResponse.json({ product: data, ...(warning ? { warning } : {}) });
   } catch (err) {
     return NextResponse.json(
       {

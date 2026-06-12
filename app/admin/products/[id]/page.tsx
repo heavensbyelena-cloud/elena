@@ -137,9 +137,12 @@ export default function AdminEditProductPage() {
           stock: form.stock ? parseInt(form.stock, 10) : null,
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Erreur lors de la mise à jour');
+      }
+      if (typeof data.warning === 'string') {
+        alert(data.warning);
       }
       router.push('/admin');
     } catch (err) {

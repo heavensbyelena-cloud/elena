@@ -4,7 +4,7 @@ import { requireAdminApi } from '@/lib/auth';
 import { devLog } from '@/lib/dev-log';
 import { normalizeProductImages } from '@/lib/product-images';
 import { normalizeMaterialsInput } from '@/lib/materials';
-import { insertProductRow, isMissingMaterialsColumn } from '@/lib/products-persistence';
+import { insertProductRow, isMissingImagesColumn, isMissingMaterialsColumn, galleryMigrationWarning } from '@/lib/products-persistence';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
     // (createServerSupabaseClient + anon peut renvoyer [] si RLS n'autorise pas SELECT aux anonymes.)
     const admin = createAdminClient();
     const baseSelect = 'id, name, price, badge, category, image_url, stock, is_active';
+    const selectWithImages = `${baseSelect}, images`;
     const selectWithMaterials = `${baseSelect}, materials`;
+    const selectFull = `${baseSelect}, images, materials`;
 
     async function runQuery(fields: string) {
       let q = admin
@@ -35,8 +37,14 @@ export async function GET(request: NextRequest) {
       return q;
     }
 
-    let { data, error } = await runQuery(selectWithMaterials);
+    let { data, error } = await runQuery(selectFull);
+    if (error && isMissingImagesColumn(error)) {
+      ({ data, error } = await runQuery(selectWithMaterials));
+    }
     if (error && isMissingMaterialsColumn(error)) {
+      ({ data, error } = await runQuery(isMissingImagesColumn(error) ? baseSelect : selectWithImages));
+    }
+    if (error && isMissingImagesColumn(error)) {
       ({ data, error } = await runQuery(baseSelect));
     }
 
@@ -110,7 +118,7 @@ export async function POST(request: NextRequest) {
     };
     devLog('[POST /api/products] Payload insert:', payload);
 
-    const { data, error } = await insertProductRow(admin, payload);
+    const { data, error, meta } = await insertProductRow(admin, payload);
 
     if (error) {
       console.error('[POST /api/products] Erreur Supabase:', {
@@ -127,7 +135,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    return NextResponse.json({ product: data }, { status: 201 });
+    const warning = galleryMigrationWarning(meta, normalized.images.length);
+    return NextResponse.json({ product: data, ...(warning ? { warning } : {}) }, { status: 201 });
   } catch (err) {
     console.error('[POST /api/products] Exception:', err);
     return NextResponse.json(
