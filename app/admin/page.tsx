@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-server';
 import AdminTabs from '@/components/Admin/AdminTabs';
+import { fetchCategoryImageOverrides } from '@/lib/category-images';
 
 interface OrderRow {
   id: string;
@@ -22,6 +23,7 @@ export default async function AdminDashboardPage() {
   await requireAdmin();
 
   const admin = createAdminClient();
+  const categoryImageOverrides = await fetchCategoryImageOverrides();
 
   const [
     { count: nbProducts },
@@ -79,6 +81,7 @@ export default async function AdminDashboardPage() {
       products={products ?? []}
       orders={ordersWithPromoCodes}
       reviews={reviews ?? []}
+      categoryImageOverrides={categoryImageOverrides}
     />
   );
 }

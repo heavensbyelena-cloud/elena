@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProductGrid from '@/components/Product/ProductGrid';
-import { CATEGORIES, getCategoryBySlug, isDecorationSlug, getDecorationSubcatLabel } from '@/lib/categories';
+import { CATEGORIES, getCategoryBySlugWithOverrides, isDecorationSlug, getDecorationSubcatLabel } from '@/lib/categories';
+import type { CategoryImageOverrides } from '@/lib/category-images';
 import { PRODUCT_MATERIALS, productMatchesMaterials } from '@/lib/materials';
 import type { Product, ProductCategory, ProductMaterial } from '@/types';
 
@@ -51,6 +52,7 @@ function ShopPageContent() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoryImageOverrides, setCategoryImageOverrides] = useState<CategoryImageOverrides>({});
   const [activeCategory, setActive] = useState<ProductCategory | null>(null);
   const [activeMaterials, setActiveMaterials] = useState<ProductMaterial[]>([]);
 
@@ -89,12 +91,14 @@ function ShopPageContent() {
 
   const currentSeo = useMemo(() => {
     if (!activeCategory) return DEFAULT_SEO;
-    const cat = getCategoryBySlug(activeCategory);
+    const cat = getCategoryBySlugWithOverrides(activeCategory, categoryImageOverrides);
     if (cat) return cat.seo;
     // Sous-catégorie décoration : utiliser le SEO parent
-    if (isDecorationSlug(activeCategory)) return getCategoryBySlug('decoration')?.seo ?? DEFAULT_SEO;
+    if (isDecorationSlug(activeCategory)) {
+      return getCategoryBySlugWithOverrides('decoration', categoryImageOverrides)?.seo ?? DEFAULT_SEO;
+    }
     return DEFAULT_SEO;
-  }, [activeCategory]);
+  }, [activeCategory, categoryImageOverrides]);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -121,6 +125,13 @@ function ShopPageContent() {
   }, []);
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
+
+  useEffect(() => {
+    fetch('/api/category-images')
+      .then((res) => res.json())
+      .then((data) => setCategoryImageOverrides(data.overrides ?? {}))
+      .catch(() => setCategoryImageOverrides({}));
+  }, []);
 
   // Lire ?category= et ?materials= depuis l'URL
   useEffect(() => {
@@ -161,12 +172,12 @@ function ShopPageContent() {
 
   const activeCategoryLabel = useMemo(() => {
     if (!activeCategory) return null;
-    const cat = getCategoryBySlug(activeCategory);
+    const cat = getCategoryBySlugWithOverrides(activeCategory, categoryImageOverrides);
     if (cat) return cat.label;
     // Sous-catégorie décoration : cherche dans les slugs dérivés des produits
     const sub = decorationSubcats.find(s => s.slug === activeCategory);
     return sub?.label ?? getDecorationSubcatLabel(activeCategory);
-  }, [activeCategory, decorationSubcats]);
+  }, [activeCategory, decorationSubcats, categoryImageOverrides]);
 
   useEffect(() => {
     document.title = currentSeo.title;

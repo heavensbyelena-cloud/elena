@@ -70,7 +70,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[PATCH /api/orders]', message);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

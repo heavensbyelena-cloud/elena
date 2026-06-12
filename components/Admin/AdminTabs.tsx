@@ -6,10 +6,12 @@ import AdminProductActions from '@/app/admin/products/AdminProductActions';
 import AdminOrderStatus from '@/app/admin/orders/AdminOrderStatus';
 import AdminReviewActions from '@/app/admin/reviews/AdminReviewActions';
 import DeleteResineSubcatModal from '@/components/Admin/DeleteResineSubcatModal';
+import AdminCategoryImages from '@/components/Admin/AdminCategoryImages';
 import { formatPrice, translateStatus } from '@/lib/utils';
 import { CATEGORIES, getDecorationSubcatLabel, isDecorationSlug } from '@/lib/categories';
+import type { CategoryImageOverrides } from '@/lib/category-images';
 
-type TabId = 'dashboard' | 'products' | 'orders' | 'reviews';
+type TabId = 'dashboard' | 'products' | 'orders' | 'reviews' | 'categories';
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
   pending: '#e8a040',
@@ -99,13 +101,14 @@ interface AdminTabsProps {
     status: string;
     created_at: string;
   }>;
+  categoryImageOverrides: CategoryImageOverrides;
 }
 
 function stars(n: number) {
   return '★'.repeat(n) + '☆'.repeat(5 - n);
 }
 
-export default function AdminTabs({ dashboard, products, orders, reviews }: AdminTabsProps) {
+export default function AdminTabs({ dashboard, products, orders, reviews, categoryImageOverrides }: AdminTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [reviewFilter, setReviewFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
@@ -199,6 +202,7 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
         {([
           { id: 'dashboard' as const, label: isMobile ? '🏠' : 'Dashboard' },
           { id: 'products' as const, label: isMobile ? '📦' : 'Produits' },
+          { id: 'categories' as const, label: isMobile ? '🖼' : 'Catégories' },
           { id: 'orders' as const, label: isMobile ? '🧾' : 'Commandes' },
           { id: 'reviews' as const, label: isMobile ? '★' : 'Avis' },
         ]).map(({ id, label }) => (
@@ -726,6 +730,10 @@ export default function AdminTabs({ dashboard, products, orders, reviews }: Admi
       )}
 
       {/* ═══════════════ AVIS ═══════════════ */}
+      {activeTab === 'categories' && (
+        <AdminCategoryImages initialOverrides={categoryImageOverrides} isMobile={isMobile} />
+      )}
+
       {activeTab === 'reviews' && (
         <>
           <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1.4rem' : '2rem', fontWeight: 400, marginBottom: '20px' }}>

@@ -41,9 +41,16 @@ const nextConfig = {
       },
     ];
   },
-  // Redirection admin protégée
   async redirects() {
-    return [];
+    const legacyHosts = ['elenaheavensofficiel.com', 'www.elenaheavensofficiel.com'];
+    const destination = 'https://heavensbyelena.com/home';
+
+    return legacyHosts.map((host) => ({
+      source: '/:path*',
+      has: [{ type: 'host', value: host }],
+      destination,
+      permanent: true,
+    }));
   },
 };
 

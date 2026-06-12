@@ -164,6 +164,36 @@ export const CATEGORIES: CategoryDef[] = [
 // Slugs de toutes les catégories (pour TypeScript)
 export const CATEGORY_SLUGS = CATEGORIES.map(c => c.slug);
 
+/** Applique les URLs personnalisées (Supabase) sur la config statique. */
+export function applyCategoryImageOverrides(
+  overrides: Record<string, string>
+): CategoryDef[] {
+  return CATEGORIES.map((cat) => {
+    const url = overrides[cat.slug];
+    if (!url) return cat;
+    return {
+      ...cat,
+      img: url,
+      seo: { ...cat.seo, ogImage: url },
+    };
+  });
+}
+
+export function getCategoryBySlugWithOverrides(
+  slug: string,
+  overrides: Record<string, string> = {}
+): CategoryDef | undefined {
+  const cat = CATEGORIES.find((c) => c.slug === slug);
+  if (!cat) return undefined;
+  const url = overrides[slug];
+  if (!url) return cat;
+  return {
+    ...cat,
+    img: url,
+    seo: { ...cat.seo, ogImage: url },
+  };
+}
+
 // Helper : récupérer une catégorie par son slug
 export function getCategoryBySlug(slug: string): CategoryDef | undefined {
   return CATEGORIES.find(c => c.slug === slug);

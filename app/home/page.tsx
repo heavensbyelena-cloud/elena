@@ -4,7 +4,7 @@ import Image from 'next/image';
 import ProductGrid from '@/components/Product/ProductGrid';
 import HeroSection from '@/components/Hero/HeroSection';
 import { createAdminClient } from '@/lib/supabase-server';
-import { CATEGORIES } from '@/lib/categories';
+import { getCategoriesWithImages } from '@/lib/category-images';
 import { SEO, SITE_URL, OPEN_GRAPH_DEFAULTS, TWITTER_DEFAULTS } from '@/lib/seo';
 import { organizationSchema, websiteSchema, localBusinessSchema, jsonLd } from '@/lib/schema';
 import type { Product } from '@/types';
@@ -80,7 +80,7 @@ async function getBestSellers(): Promise<Product[]> {
 }
 
 export default async function HomePage() {
-  const products = await getBestSellers();
+  const [products, categories] = await Promise.all([getBestSellers(), getCategoriesWithImages()]);
 
   return (
     <>
@@ -117,7 +117,7 @@ Un monde à part.`}
       <section className="section-padding" style={{ background: 'var(--fond)' }} id="boutique">
         <h2 className="section-title" style={{ marginBottom: '60px' }}>Explorer</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '40px', maxWidth: '1200px', margin: '0 auto' }} className="cats-grid">
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <Link key={cat.slug} href={`/shop?category=${cat.slug}`} style={{ textAlign: 'center', textDecoration: 'none', color: 'var(--texte)', display: 'block', transition: 'all 0.3s ease' }}>
               <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px', background: 'var(--fond-carte)', position: 'relative', border: '1px solid var(--bordure)', transition: 'all 0.3s ease' }}>
                 <Image
@@ -126,7 +126,7 @@ Un monde à part.`}
                   fill
                   sizes="300px"
                   style={{ objectFit: cat.imgObjectFit ?? 'cover', transition: 'transform 0.4s ease' }}
-                  unoptimized={cat.img.includes('placehold.co')}
+                  unoptimized={cat.img.includes('placehold.co') || cat.img.startsWith('http')}
                 />
               </div>
               <span style={{ fontSize: '0.78rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gris)' }}>{cat.label}</span>

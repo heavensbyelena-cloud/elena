@@ -180,6 +180,23 @@ export type Database = {
           used_at: string;
         }>;
       };
+      category_images: {
+        Row: {
+          slug: string;
+          image_url: string;
+          updated_at: string;
+        };
+        Insert: {
+          slug: string;
+          image_url: string;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          slug: string;
+          image_url: string;
+          updated_at: string;
+        }>;
+      };
     };
     Functions: {
       sync_profile_after_signup: {
