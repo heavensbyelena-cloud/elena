@@ -119,6 +119,14 @@ Un monde à part.`}
         ]}
       />
 
+      {/* ── AVIS CLIENTS ─────────────────────────────────── */}
+      {reviews.length > 0 && (
+        <section className="section-padding" style={{ background: 'var(--fond-casse)' }} id="avis">
+          <h2 className="section-title" style={{ marginBottom: '50px' }}>Ils nous font confiance</h2>
+          <ReviewCarousel reviews={reviews} averageRating={average} />
+        </section>
+      )}
+
       {/* ── CATÉGORIES ───────────────────────────────────── */}
       <section className="section-padding" style={{ background: 'var(--fond)' }} id="boutique">
         <h2 className="section-title" style={{ marginBottom: '60px' }}>Explorer</h2>
@@ -149,14 +157,6 @@ Un monde à part.`}
           <Link href="/shop" className="btn-secondary">Voir tous les produits</Link>
         </div>
       </section>
-
-      {/* ── AVIS CLIENTS ─────────────────────────────────── */}
-      {reviews.length > 0 && (
-        <section className="section-padding" style={{ background: 'var(--fond)' }} id="avis">
-          <h2 className="section-title" style={{ marginBottom: '50px' }}>Ils nous font confiance</h2>
-          <ReviewCarousel reviews={reviews} averageRating={average} />
-        </section>
-      )}
 
       {/* ── NOTRE HISTOIRE ───────────────────────────────── */}
       <section id="histoire" className="section-padding" style={{ background: 'var(--fond)' }}>
